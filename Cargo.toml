@@ -1,0 +1,5 @@
+[workspace]
+members = ["web-compiler"
+, "web-compiler-common", "web-compiler-core", "web-compiler-html-ast"]
+
+resolver = "3"  # Use resolver version 3 (recommended for edition 2021/2024)
