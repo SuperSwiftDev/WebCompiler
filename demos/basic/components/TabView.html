@@ -1,0 +1,22 @@
+<bind host get-attribute="id" as="id"/>
+<!--
+@component TabView
+-->
+<div data-component="TabView" id="{{id}}">
+    <aside>
+        <ol>
+            <enumerate target="content" as="item">
+                <bind from="item" get-attribute="data-key" as="key"/>
+                <bind from="item" get-attribute="data-label" as="label"/>
+                <li>
+                    <button data-key="{{key}}">
+                        <value for="label"></value>
+                    </button>
+                </li>
+            </enumerate>
+        </ol>
+    </aside>
+    <div class="content">
+        <content></content>
+    </div>
+</div>

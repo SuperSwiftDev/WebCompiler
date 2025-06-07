@@ -1,14 +1,13 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+pub mod srcset;
+pub mod symlink;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+mod utilities;
+mod vpath;
+mod dependency;
+mod path_resolver;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub use utilities::*;
+pub use vpath::*;
+pub use dependency::*;
+pub use path_resolver::*;
+

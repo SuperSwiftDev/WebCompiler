@@ -1,3 +1,7 @@
+pub mod cli;
+pub mod manifest;
+
 fn main() {
-    println!("Hello, world!");
+    let cli = cli::Cli::load();
+    cli.execute();
 }
