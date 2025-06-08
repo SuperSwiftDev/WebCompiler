@@ -117,7 +117,9 @@ This project builds on lessons from:
 * [`SuperSwiftSites`](https://github.com/SuperSwiftDev/SuperSwiftSites) the previous implementation which has been refactored, renamed, and now lives here as `web-compiler`.
   - ⚠️ Still working on feature parity with the previous version.
 * [`subscript-html`](https://github.com/subscript-publishing/subscript-html) — the original compiler-based HTML preprocessing for educational publishing
-* [`colbyn/school-notes`](https://github.com/colbyn/school-notes) — LaTeX-style layout system for STEM documentation
+  
+  **Examples:**
+  - [My Beautiful Math Notes](https://colbyn.github.io/school-notes-spring-2020/)
 * Early frustrations with PostHTML + Parcel, which lacked bottom-up macro evaluation and consistent path resolution (cannot be understated)
 
 Web Compiler improves on these by offering:
