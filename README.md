@@ -115,6 +115,7 @@ These macros are inspired by compiler design: **top-down scoping + bottom-up tra
 This project builds on lessons from:
 
 * [`SuperSwiftSites`](https://github.com/SuperSwiftDev/SuperSwiftSites) the previous implementation which has been refactored, renamed, and now lives here as `web-compiler`.
+  - ⚠️ Still working on feature parity with the previous version.
 * [`subscript-html`](https://github.com/subscript-publishing/subscript-html) — the original compiler-based HTML preprocessing for educational publishing
 * [`colbyn/school-notes`](https://github.com/colbyn/school-notes) — LaTeX-style layout system for STEM documentation
 * Early frustrations with PostHTML + Parcel, which lacked bottom-up macro evaluation and consistent path resolution (cannot be understated)
