@@ -1,3 +1,7 @@
+# Note
+
+See [SuperSwiftDev/WebCompiler/tree/next](https://github.com/SuperSwiftDev/WebCompiler/tree/next) for the next rewrite. 
+
 # Web Compiler
 
 A static-site compiler that treats HTML like code — composable, inspectable, and compiled with full semantic context.
