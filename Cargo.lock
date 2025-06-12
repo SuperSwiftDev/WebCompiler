@@ -55,6 +55,7 @@ version = "0.1.0"
 name = "web-compiler-macro-types"
 version = "0.1.0"
 dependencies = [
+ "web-compiler-io-types",
  "web-compiler-xml-ast",
 ]
 
