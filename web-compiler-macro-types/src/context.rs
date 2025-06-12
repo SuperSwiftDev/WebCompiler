@@ -106,7 +106,7 @@ impl ContextProfile {
 // ————————————————————————————————————————————————————————————————————————————
 
 /// A registry of named context stacks.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct ContextRegistry {
     pub profiles: BTreeMap<String, ContextProfile>,
     pub default: ContextProfile,

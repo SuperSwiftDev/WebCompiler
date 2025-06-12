@@ -60,3 +60,33 @@ impl<Value, Effect: Effectful> IO<Value, Effect> {
     }
 }
 
+pub fn io_iter_map<Input, Output, Effect: Effectful>(
+    size_hint: usize,
+    items: impl IntoIterator<Item=Input>,
+    apply: impl Fn(Input) -> IO<Output, Effect>,
+) -> IO<Vec<Output>, Effect> {
+    let outputs = items
+        .into_iter()
+        .map(|x| apply(x));
+    IO::<Output, Effect>::flatten(size_hint, outputs)
+}
+
+pub fn io_iter_map_mut<Input, Output, Effect: Effectful>(
+    size_hint: usize,
+    items: impl IntoIterator<Item=Input>,
+    mut apply: impl FnMut(Input) -> IO<Output, Effect>,
+) -> IO<Vec<Output>, Effect> {
+    let outputs = items
+        .into_iter()
+        .map(|x| apply(x));
+    IO::<Output, Effect>::flatten(size_hint, outputs)
+}
+
+pub fn io_vec_map<Input, Output, Effect: Effectful>(
+    items: Vec<Input>,
+    apply: impl Fn(Input) -> IO<Output, Effect>,
+) -> IO<Vec<Output>, Effect> {
+    let items_len = items.len();
+    io_iter_map(items_len, items, apply)
+}
+

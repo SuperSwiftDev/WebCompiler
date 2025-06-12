@@ -6,3 +6,6 @@ pub use scope::*;
 
 pub mod path_expr;
 pub mod context;
+pub mod environment;
+pub mod project;
+pub mod path_utils;
