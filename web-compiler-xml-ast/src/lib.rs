@@ -1,14 +1,13 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+mod markers;
+mod tag;
+mod ast;
+mod attrs;
+mod parser;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub use markers::*;
+pub use tag::*;
+pub use ast::*;
+pub use attrs::*;
+pub use parser::*;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub mod transform;

@@ -1,14 +1,8 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+extern crate web_compiler_xml_ast as xml_ast;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+mod scope;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub use scope::*;
+
+pub mod path_expr;
+pub mod context;

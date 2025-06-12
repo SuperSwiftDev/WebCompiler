@@ -1,4 +1,4 @@
 [workspace]
-members = ["web-compiler", "web-compiler-core", "web-compiler-macro-types", "web-compiler-xml-ast"]
+members = ["web-compiler", "web-compiler-core", "web-compiler-io-types", "web-compiler-macro-types", "web-compiler-xml-ast"]
 
 resolver = "3"  # Use resolver version 3 (recommended for edition 2021/2024)
