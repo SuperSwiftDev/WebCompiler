@@ -1,6 +1,6 @@
 # Note
 
-See [SuperSwiftDev/WebCompiler/tree/next](https://github.com/SuperSwiftDev/WebCompiler/tree/next) for the next rewrite. 
+Working on the next version at [SuperSwiftDev/WebCompiler/tree/next](https://github.com/SuperSwiftDev/WebCompiler/tree/next).
 
 # Web Compiler
 
