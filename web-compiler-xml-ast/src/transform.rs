@@ -65,6 +65,15 @@ pub fn apply_effectful_markup_transformer<T: EffectfulMarkupTransformer>(
     node.apply_effectful_markup_transformer(transformer, scope)
 }
 
+#[inline]
+pub fn apply_effectful_markup_transformer_node_vec<T: EffectfulMarkupTransformer>(
+    nodes: Vec<Node>,
+    transformer: &T,
+    scope: &mut T::Scope
+) -> IO<Vec<T::Output>, T::Effect> {
+    process_node_sequence(nodes, transformer, scope)
+}
+
 impl Node {
     fn apply_effectful_markup_transformer<T: EffectfulMarkupTransformer>(self, transformer: &T, scope: &mut T::Scope) -> IO<T::Output, T::Effect> {
         transformer
