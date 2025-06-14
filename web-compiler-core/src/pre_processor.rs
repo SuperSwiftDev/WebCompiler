@@ -1,0 +1,99 @@
+#![allow(unused)]
+use io_types::Effectful;
+use macro_types::environment::{AccumulatedEffects, LexicalEnvironment, MacroIO, SourceContext, MacroRuntime};
+use macro_types::macro_tag::MacroTagSet;
+use macro_types::project::FileInput;
+use xml_ast::{transform::{EffectfulMarkupTransformer, ProcessMode}, AttributeMap, Element, Fragment, Node, TagBuf};
+
+pub struct PreProcessor<'a> {
+    pub runtime: MacroRuntime<'a>,
+}
+
+impl<'a> PreProcessor<'a> {
+    pub fn new(runtime: MacroRuntime<'a>) -> Self {
+        Self { runtime }
+    }
+    pub fn fork(&self, file_input: &'a FileInput) -> Self {
+        Self { runtime: self.runtime.fork(file_input) }
+    }
+    pub fn process_sequence(&self, nodes: Vec<Node>, scope: &mut LexicalEnvironment) -> MacroIO<Vec<Node>> {
+        xml_ast::transform::apply_effectful_markup_transformer_node_vec(nodes, self, scope)
+    }
+    pub fn load_compile(&self, scope: &mut LexicalEnvironment) -> Result<MacroIO<Node>, PreProcessError> {
+        let source = self.runtime
+            .source_context()
+            .file_input()
+            .load_source_file()
+            .map_err(PreProcessError::StdIo)?;
+        let source_tree = xml_ast::parse_xml_to_ast(&source)
+            .map_err(PreProcessError::ParserError)?;
+        let source_tree = Node::Fragment(source_tree);
+        let output = xml_ast::transform::apply_effectful_markup_transformer(source_tree, self, scope);
+        Ok(output)
+    }
+}
+
+#[derive(Debug)]
+pub enum PreProcessError {
+    StdIo(std::io::Error),
+    ParserError(String),
+}
+
+impl std::fmt::Display for PreProcessError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::StdIo(error) => write!(f, "{error}"),
+            Self::ParserError(error) => write!(f, "{error}"),
+        }
+    }
+}
+
+impl std::error::Error for PreProcessError {}
+
+impl<'a> EffectfulMarkupTransformer for PreProcessor<'a> {
+    /// Output value type.
+    type Output = Node;
+    /// Top-down lexical environment.
+    type Scope = LexicalEnvironment;
+    /// Bottom-up accumulated state.
+    type Effect = AccumulatedEffects;
+
+    /// Transforms a raw text node into an output.
+    fn transform_text(&self, text: String, scope: &mut Self::Scope) -> MacroIO<Node> {
+        MacroIO::wrap(Node::Text(text))
+    }
+    /// Transforms a fragment (sequence of child nodes) into a single output.
+    fn transform_fragment(&self, fragment: Vec<Self::Output>, scope: &mut Self::Scope) -> MacroIO<Node> {
+        MacroIO::wrap(Node::Fragment(Fragment::from_nodes(fragment)))
+    }
+    /// Transforms an element node (tag + attributes + children) into an output.
+    fn transform_element(
+        &self,
+        tag: TagBuf,
+        mut attributes: AttributeMap,
+        children: Vec<Self::Output>,
+        scope: &mut Self::Scope,
+    ) -> MacroIO<Node> {
+        let mut effects = AccumulatedEffects::default();
+        crate::rewrite_rules::attributes::virtualize_attribute_paths(
+            &tag,
+            &mut attributes,
+            &mut effects,
+            self.runtime.source_context(),
+        );
+        let children = Fragment::from_nodes(children);
+        let element = Element { tag, attributes, children };
+        self.runtime.rules.try_apply_pre_processors(element, scope, &self.runtime).and_modify_context(|ctx| {
+            ctx.extend(effects)
+        })
+    }
+
+    /// Optional override to intercept an element before its children are traversed.
+    ///
+    /// Like the node-level hook, this allows for rewriting or short-circuiting based
+    /// on macro syntax or binding constructs.
+    fn manual_top_down_element_handler(&self, element: Element, scope: &mut Self::Scope) -> MacroIO<ProcessMode<Element, Node>> {
+        self.runtime.macros.try_evaluate(element, scope, &self.runtime)
+    }
+}
+

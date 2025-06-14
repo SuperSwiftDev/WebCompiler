@@ -301,6 +301,11 @@ impl AttributeValueBuf {
             AttributeValueBuf::Literal(x) => x,
         }
     }
+    pub fn as_mut_string(&mut self) -> &mut String {
+        match self {
+            AttributeValueBuf::Literal(x) => x,
+        }
+    }
 }
 
 impl Debug for AttributeValueBuf {

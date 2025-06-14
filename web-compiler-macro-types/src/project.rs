@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{collections::HashSet, path::{Path, PathBuf}};
 
 use percent_encoding::{percent_decode_str, utf8_percent_encode, AsciiSet, NON_ALPHANUMERIC};
 
@@ -43,12 +43,30 @@ impl FileInput {
                 path.to_path_buf()
             })
     }
+    pub fn source_dir(&self) -> &Path {
+        self.source.parent().unwrap()
+    }
+    pub fn source_file(&self) -> &Path {
+        self.source.as_path()
+    }
     pub fn to_output_file_path(
         &self,
         project_context: &ProjectContext
     ) -> PathBuf {
         let target_file_path = self.resolved_public_path(project_context);
         project_context.output_dir.join(target_file_path)
+    }
+    pub fn with_dependency_relation(&self, src: impl AsRef<str>) -> DependencyRelation {
+        let from = self.source_file().to_path_buf();
+        let from = from.to_str().unwrap().to_string();
+        DependencyRelation {
+            from,
+            to: src.as_ref().to_string(),
+        }
+    }
+    pub fn load_source_file(&self) -> Result<String, std::io::Error> {
+        let content = std::fs::read_to_string(self.source_file())?;
+        Ok(content)
     }
 }
 
@@ -116,3 +134,31 @@ const NOT_VIRTUAL_PATH_SAFE: AsciiSet = NON_ALPHANUMERIC
     .remove(b'+')
     .remove(b'_');
 
+// ————————————————————————————————————————————————————————————————————————————
+// RESOLVED DEPENDENCIES
+// ————————————————————————————————————————————————————————————————————————————
+
+#[derive(Debug, Clone, Default)]
+pub struct ResolvedDependencies {
+    pub dependencies: HashSet<ResolvedDependency>,
+    pub emitted_files: HashSet<PathBuf>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ResolvedDependency {
+    pub finalized: FileDependency,
+    pub original: DependencyRelation,
+}
+
+impl ResolvedDependencies {
+    pub fn extend(&mut self, other: Self) {
+        self.dependencies.extend(other.dependencies);
+        self.emitted_files.extend(other.emitted_files);
+    }
+    pub fn include_dependency(&mut self, dependency: ResolvedDependency) {
+        self.dependencies.insert(dependency);
+    }
+    pub fn include_emitted_file(&mut self, resolved_target: impl Into<PathBuf>) {
+        let _ = self.emitted_files.insert(resolved_target.into());
+    }
+}

@@ -1,4 +1,4 @@
-use crate::{BinderValue, JsonBinderValue, MarkupBinderValue, BindingScope};
+use crate::scope::{BinderValue, JsonBinderValue, MarkupBinderValue, BindingScope};
 
 /// Individual segments in a path expression
 #[derive(Debug, Clone, PartialEq, Eq)]

@@ -1,5 +1,5 @@
 use std::collections::BTreeMap;
-use xml_ast::Node;
+use xml_ast::{Fragment, Node};
 
 
 // ————————————————————————————————————————————————————————————————————————————
@@ -42,6 +42,28 @@ pub struct RecordType<Kind> {
 pub enum BinderValue {
     Markup(MarkupBinderValue),
     Json(JsonBinderValue),
+}
+
+impl BinderValue {
+    pub fn markup_node(node: Node) -> Self {
+        Self::Markup(MarkupBinderValue(node))
+    }
+    pub fn fragment(nodes: Vec<Node>) -> Self {
+        Self::Markup(MarkupBinderValue(Node::Fragment(Fragment::from_nodes(nodes))))
+    }
+    // pub fn object(map: impl IntoIterator<Item = (String, )>)
+    pub fn as_markup(&self) -> Option<&MarkupBinderValue> {
+        match self {
+            Self::Markup(x) => Some(x),
+            _ => None,
+        }
+    }
+    pub fn as_node(&self) -> Option<&Node> {
+        match self {
+            Self::Markup(x) => Some(&x.0),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]

@@ -16,6 +16,20 @@ pub enum Node {
 }
 
 impl Node {
+    pub fn text(value: impl Into<String>) -> Self {
+        Self::Text(value.into())
+    }
+    pub fn element(
+        tag: impl Into<TagBuf>,
+        attributes: impl Into<AttributeMap>,
+        children: impl Into<Fragment>,
+    ) -> Self {
+        Self::Element(Element {
+            tag: tag.into(),
+            attributes: attributes.into(),
+            children: children.into(),
+        })
+    }
     pub fn as_text(&self) -> Option<&str> {
         match self {
             Self::Text(x) => Some(x.as_str()),
@@ -40,6 +54,9 @@ impl Node {
                 element.attributes.get(key)
             })
             .map(|value| value.as_str())
+    }
+    pub fn empty() -> Self {
+        Self::Fragment(Fragment::empty())
     }
 }
 
@@ -107,6 +124,9 @@ pub struct Fragment {
 }
 
 impl Fragment {
+    pub fn empty() -> Self {
+        Self { nodes: Vec::with_capacity(0) }
+    }
     pub fn from_nodes(nodes: impl Into<Vec<Node>>) -> Self {
         Self { nodes: nodes.into() }
     }

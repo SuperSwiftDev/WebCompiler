@@ -23,7 +23,7 @@ pub trait EffectfulMarkupTransformer {
     fn transform_element(
         &self,
         tag: TagBuf,
-        attrs: AttributeMap,
+        attributes: AttributeMap,
         children: Vec<Self::Output>,
         scope: &mut Self::Scope,
     ) -> IO<Self::Output, Self::Effect>;

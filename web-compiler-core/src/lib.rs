@@ -1,14 +1,11 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+extern crate web_compiler_xml_ast as xml_ast;
+extern crate web_compiler_macro_types as macro_types;
+extern crate web_compiler_io_types as io_types;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub mod macros;
+pub mod rewrite_rules;
+pub mod css_processor;
+pub mod pre_processor;
+pub mod post_processor;
+pub mod pipeline;
+pub mod compiler;

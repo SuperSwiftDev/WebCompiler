@@ -1,0 +1,227 @@
+use std::path::{Path, PathBuf};
+
+use macro_types::environment::{AccumulatedEffects, LexicalEnvironment, MacroIO, MacroRuntime, PathResolver, SourceContext};
+use macro_types::macro_tag::MacroTagSet;
+use macro_types::project::{FileInput, ProjectContext, ResolvedDependencies};
+use macro_types::scope::BinderValue;
+use macro_types::tag_rewrite_rule::TagRewriteRuleSet;
+use xml_ast::Node;
+
+use crate::post_processor::PostProcessor;
+use crate::pre_processor::{PreProcessError, PreProcessor};
+
+const VERBOSE_DEBUG_MODE: bool = false;
+
+#[derive(Clone)]
+pub struct GlobalPipelineSpec {
+    pub macros: MacroTagSet,
+    pub rules: TagRewriteRuleSet,
+    pub project: ProjectContext,
+    pub global_template: Option<PathBuf>,
+}
+
+/// Individual soruce file pipeline
+#[derive(Clone)]
+pub struct SourcePipeline {
+    pub file_input: FileInput,
+    pub pipeline_spec: GlobalPipelineSpec,
+    pub local_template: Option<PathBuf>,
+    pub all_input_rules: Vec<FileInput>,
+    pub resolved_dependencies: ResolvedDependencies,
+}
+
+impl SourcePipeline {
+    pub fn source_context(&self) -> SourceContext {
+        SourceContext {
+            project_context: &self.pipeline_spec.project,
+            file_input: &self.file_input,
+        }
+    }
+    pub fn macro_runtime(&self) -> MacroRuntime {
+        MacroRuntime {
+            project: &self.pipeline_spec.project,
+            macros: &self.pipeline_spec.macros,
+            rules: &self.pipeline_spec.rules,
+            input: &self.file_input,
+        }
+    }
+    pub fn source_file_input(&self) -> &FileInput {
+        &self.file_input
+    }
+    pub fn execute(&mut self) {
+        let result = self
+            .execute_pre_process_phase()
+            .map(|payload| {
+                self.execute_post_process_phase(payload)
+            })
+            .map(|(finalized, effects)| {
+                let _ = effects;
+                self.emit_post_processed_file(&finalized)
+            });
+        match result {
+            Ok(()) => (),
+            Err(error) => {
+                eprintln!("{}", error.to_string())
+            }
+        }
+    }
+}
+
+// ————————————————————————————————————————————————————————————————————————————
+// PRE-PROCESSING PHASE
+// ————————————————————————————————————————————————————————————————————————————
+
+impl SourcePipeline {
+    fn execute_pre_process_phase(&self) -> Result<MacroIO<Node>, PipelineError> {
+        let runtime = self.macro_runtime();
+        let pre_processor = PreProcessor::new(runtime);
+        let content = {
+            let mut env = LexicalEnvironment::default();
+            match pre_processor.load_compile(&mut env) {
+                Ok(x) => x,
+                Err(error) => {
+                    let source_path = self.source_file_input().source_file().to_path_buf();
+                    return Err(PipelineError::PreProcessError { source_path, error })
+                }
+            }
+        };
+        let template_path = self.local_template
+            .as_ref()
+            .or_else(|| self.pipeline_spec.global_template.as_ref());
+        let template_input = template_path.map(|path| FileInput {
+            source: path.to_path_buf(),
+            public: None,
+        });
+        if let Some(template_input) = template_input {
+            let pre_processor = pre_processor.fork(&template_input);
+            let finale = content.and_then(|content| {
+                let mut env = LexicalEnvironment::default();
+                env.binding_scope.insert("content", BinderValue::markup_node(content.clone()));
+                match pre_processor.load_compile(&mut env) {
+                    Ok(x) => x,
+                    Err(error) => {
+                        let source_path = self.source_file_input().source_file();
+                        log_error(&error, Some(source_path), None);
+                        MacroIO::wrap(content)
+                    }
+                }
+            });
+            return Ok(finale)
+        }
+        return Ok(content)
+    }
+    fn execute_post_process_phase(&self, processed: MacroIO<Node>) -> (Node, AccumulatedEffects) {
+        let ( processed, effects ) = processed.collapse();
+        let dependencies = effects.dependencies
+            .clone()
+            .into_iter()
+            .chain(effects.deferred_dependencies.clone().into_iter())
+            .collect::<Vec<_>>();
+        let path_resolver = PathResolver {
+            inputs: &self.all_input_rules,
+            dependencies: &dependencies,
+            host_context: self.source_context(),
+        };
+        let mut post_processor = PostProcessor::new(
+            &self.pipeline_spec.rules,
+            path_resolver
+        );
+        let finalized = post_processor.apply(processed);
+        ( finalized, effects )
+    }
+    fn emit_post_processed_file(&mut self, node: &Node) {
+        let html_string = node.pretty_format();
+        let resolved_public_path = self.file_input.resolved_public_path(&self.pipeline_spec.project);
+        let output_path = self.file_input.to_output_file_path(&self.pipeline_spec.project);
+        write_output_file_smart(&output_path, &html_string);
+        self.resolved_dependencies.emitted_files.insert(resolved_public_path);
+    }
+}
+
+#[derive(Debug)]
+pub enum PipelineError {
+    PreProcessError {
+        source_path: PathBuf,
+        error: PreProcessError,
+    }
+}
+
+impl std::fmt::Display for PipelineError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::PreProcessError { source_path, error } => {
+                let error_message = format_error(&error, Some(source_path), None);
+                write!(f, "{error_message}")
+            }
+        }
+    }
+}
+
+impl std::error::Error for PipelineError {}
+
+// ————————————————————————————————————————————————————————————————————————————
+// HELPERS
+// ————————————————————————————————————————————————————————————————————————————
+
+fn log_error(error: &dyn std::error::Error, file_path: Option<&Path>, original: Option<&Path>) {
+    eprintln!("{}", format_error(error, file_path, original))
+}
+
+fn format_error(error: &dyn std::error::Error, file_path: Option<&Path>, original: Option<&Path>) -> String {
+    let mut parts = vec![format!("{}", error)];
+    let mut source = error.source();
+
+    while let Some(err) = source {
+        parts.push(format!("{}", err));
+        source = err.source();
+    }
+
+    let error_chain = parts.join(" : ");
+
+    let cwd = std::env::current_dir().unwrap();
+    let leading = if VERBOSE_DEBUG_MODE {
+        format!("[{}] ", cwd.display())
+    } else {
+        String::default()
+    };
+
+    match (file_path, original) {
+        (Some(file_path), Some(original)) => {
+            let file_path = file_path.display();
+            let original = original.display();
+            return format!("{leading}Error while processing '{file_path}' ({original}): {error_chain}");
+        }
+        (Some(file_path), None) => {
+            let file_path = file_path.display();
+            return format!("{leading}Error while processing '{file_path}': {error_chain}");
+        }
+        (None, Some(original)) => {
+            let original = original.display();
+            return format!("{leading}{original} Error: {error_chain}");
+        }
+        (None, None) => {
+            return format!("{leading}Error: {error_chain}");
+        }
+    }
+}
+
+fn write_output_file_smart(file_path: impl AsRef<Path>, contents: &str) {
+    let file_path = file_path.as_ref();
+    let new_bytes = contents.as_bytes();
+
+    let file_needs_write = match std::fs::read(file_path) {
+        Ok(existing_bytes) => {
+            existing_bytes != new_bytes
+        },
+        Err(_) => true, // file doesn't exist or can't be read
+    };
+
+    if file_needs_write {
+        if let Some(parent_dir) = file_path.parent() {
+            std::fs::create_dir_all(parent_dir).unwrap();
+        }
+        println!("> writing {file_path:?}");
+        std::fs::write(file_path, new_bytes).unwrap();
+    }
+}
+
