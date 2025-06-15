@@ -45,7 +45,7 @@ pub enum BinderValue {
 }
 
 impl BinderValue {
-    pub fn markup_node(node: Node) -> Self {
+    pub fn node(node: Node) -> Self {
         Self::Markup(MarkupBinderValue(node))
     }
     pub fn fragment(nodes: Vec<Node>) -> Self {

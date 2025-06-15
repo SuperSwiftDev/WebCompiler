@@ -71,7 +71,9 @@ fn to_output_format<Builder: HtmlTreeBuilder>(node: &rcdom::Node, builder: &mut 
         rcdom::NodeData::Document => children,
         rcdom::NodeData::Doctype { .. } => children,
         rcdom::NodeData::Text { contents } => {
-            let contents = contents.borrow().escape_default().to_string();
+            // use html5ever::tendril::TendrilSink;
+
+            let contents = contents.borrow().to_string();
             vec![
                 builder.text_node(contents)
             ]

@@ -30,6 +30,7 @@ pub fn prettify_html(html: &str) -> Result<String, HtmlPrettifyError> {
             "no",
             "-indent",         // pretty print
             "-wrap", "120",    // wrap lines at 120 chars
+            "--tidy-mark", "no", // do not insert the generator meta tag
             "-as-html",        // treat input as HTML
             "-utf8",           // set output encoding
         ])

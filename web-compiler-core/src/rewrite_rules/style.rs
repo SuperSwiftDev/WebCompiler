@@ -20,9 +20,19 @@ impl TagRewriteRule for StyleMacroTag {
             .text_contents()
             .join("");
         let css_preprocessor = CssPreprocessor::new(runtime.source_context());
-        css_preprocessor.execute(&text_contents).map(|stylesheet| {
-            Node::Text(stylesheet)
-        })
+        css_preprocessor
+            .execute(&text_contents)
+            .map(|stylesheet| {
+                let Element { tag, attributes, children: _ } = element;
+                let children = Fragment::from_nodes(vec![
+                    Node::text(stylesheet),
+                ]);
+                Node::Element(Element {
+                    tag,
+                    attributes,
+                    children
+                })
+            })
     }
     fn post_process(&self, element: Element) -> Node {
         let Element { tag, attributes, children } = element;

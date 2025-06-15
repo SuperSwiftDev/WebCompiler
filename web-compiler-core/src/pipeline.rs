@@ -96,7 +96,7 @@ impl SourcePipeline {
             let pre_processor = pre_processor.fork(&template_input);
             let finale = content.and_then(|content| {
                 let mut env = LexicalEnvironment::default();
-                env.binding_scope.insert("content", BinderValue::markup_node(content.clone()));
+                env.binding_scope.insert("content", BinderValue::node(content.clone()));
                 match pre_processor.load_compile(&mut env) {
                     Ok(x) => x,
                     Err(error) => {
@@ -130,7 +130,8 @@ impl SourcePipeline {
         ( finalized, effects )
     }
     fn emit_post_processed_file(&mut self, node: &Node) {
-        let html_string = node.pretty_format();
+        let html_string = node.format_document_pretty();
+        // let html_string = node.format_document();
         let resolved_public_path = self.file_input.resolved_public_path(&self.pipeline_spec.project);
         let output_path = self.file_input.to_output_file_path(&self.pipeline_spec.project);
         write_output_file_smart(&output_path, &html_string);

@@ -112,6 +112,14 @@ impl FormatEnvironment {
 // ————————————————————————————————————————————————————————————————————————————
 
 impl Node {
+    pub fn format_document(&self) -> String {
+        let doc_type = "<!DOCTYPE html>";
+        let html = self.format(FormatSettings::default());
+        format!("{doc_type}\n{html}")
+    }
+    pub fn format_document_pretty(&self) -> String {
+        self.pretty_format()
+    }
     pub fn format(&self, settings: FormatSettings) -> String {
         let environment = FormatEnvironment::new(settings);
         self.render_impl(&environment)

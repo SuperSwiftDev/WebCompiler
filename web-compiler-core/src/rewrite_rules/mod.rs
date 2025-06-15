@@ -10,10 +10,9 @@ pub use link::*;
 
 use macro_types::tag_rewrite_rule::{TagRewriteRule, TagRewriteRuleSet};
 
-// pub static STANDARD_MACRO_TAGS: &'static [i8] = &[];
 pub fn standard_tag_rewrite_rules() -> Vec<Rc<dyn TagRewriteRule>> {
     vec![
-        // Rc::new(StyleMacroTag),
+        Rc::new(StyleMacroTag),
     ]
 }
 
