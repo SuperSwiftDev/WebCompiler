@@ -1,10 +1,7 @@
 use macro_types::macro_tag::MacroTag;
 use macro_types::environment::{MacroIO, MacroRuntime};
 use macro_types::path_expr::PathExpression;
-use macro_types::scope::BinderValue;
-use xml_ast::{Fragment, Node};
-
-use crate::pre_processor::PreProcessor;
+use xml_ast::Node;
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct BindMacroTag;
