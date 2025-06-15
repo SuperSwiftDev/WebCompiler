@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use macro_types::environment::{AccumulatedEffects, LexicalEnvironment, MacroIO, MacroRuntime, PathResolver, SourceContext};
+use macro_types::environment::{AccumulatedEffects, LexicalEnvironment, MacroIO, MacroRuntime, SourcePathResolver, SourceContext};
 use macro_types::macro_tag::MacroTagSet;
 use macro_types::project::{FileInput, ProjectContext, ResolvedDependencies};
 use macro_types::scope::BinderValue;
@@ -110,23 +110,27 @@ impl SourcePipeline {
         }
         return Ok(content)
     }
-    fn execute_post_process_phase(&self, processed: MacroIO<Node>) -> (Node, AccumulatedEffects) {
+    fn execute_post_process_phase(&mut self, processed: MacroIO<Node>) -> (Node, AccumulatedEffects) {
         let ( processed, effects ) = processed.collapse();
         let dependencies = effects.dependencies
             .clone()
             .into_iter()
             .chain(effects.deferred_dependencies.clone().into_iter())
             .collect::<Vec<_>>();
-        let path_resolver = PathResolver {
+        let path_resolver = SourcePathResolver {
             inputs: &self.all_input_rules,
             dependencies: &dependencies,
-            host_context: self.source_context(),
+            host_context: self.source_context().to_owned(),
         };
+        let mut resolved_dependencies = ResolvedDependencies::default();
         let mut post_processor = PostProcessor::new(
             &self.pipeline_spec.rules,
-            path_resolver
+            path_resolver,
+            &mut resolved_dependencies
         );
         let finalized = post_processor.apply(processed);
+        // println!("path_resolver: {path_resolver:#?}");
+        self.resolved_dependencies.extend(resolved_dependencies);
         ( finalized, effects )
     }
     fn emit_post_processed_file(&mut self, node: &Node) {

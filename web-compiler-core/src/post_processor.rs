@@ -1,17 +1,21 @@
-use macro_types::{environment::PathResolver, tag_rewrite_rule::TagRewriteRuleSet};
+use macro_types::{environment::SourcePathResolver, tag_rewrite_rule::TagRewriteRuleSet};
 use xml_ast::{traversal::ElementVisitor, Element, Node};
 
 use crate::macro_types::project::ResolvedDependencies;
 
 pub struct PostProcessor<'a> {
     pub rules: &'a TagRewriteRuleSet,
-    pub path_resolver: PathResolver<'a>,
-    pub resolved_dependencies: ResolvedDependencies,
+    pub path_resolver: SourcePathResolver<'a>,
+    pub resolved_dependencies: &'a mut ResolvedDependencies,
 }
 
 impl<'a> PostProcessor<'a> {
-    pub fn new(rules: &'a TagRewriteRuleSet, path_resolver: PathResolver<'a>) -> Self {
-        Self { rules, path_resolver, resolved_dependencies: Default::default() }
+    pub fn new(
+        rules: &'a TagRewriteRuleSet,
+        path_resolver: SourcePathResolver<'a>,
+        resolved_dependencies: &'a mut ResolvedDependencies,
+    ) -> Self {
+        Self { rules, path_resolver, resolved_dependencies }
     }
     pub fn apply(&mut self, node: Node) -> Node {
         xml_ast::traversal::apply_element_visitor(node, self)

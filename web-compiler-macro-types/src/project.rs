@@ -144,12 +144,6 @@ pub struct ResolvedDependencies {
     pub emitted_files: HashSet<PathBuf>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ResolvedDependency {
-    pub finalized: FileDependency,
-    pub original: DependencyRelation,
-}
-
 impl ResolvedDependencies {
     pub fn extend(&mut self, other: Self) {
         self.dependencies.extend(other.dependencies);
@@ -162,3 +156,22 @@ impl ResolvedDependencies {
         let _ = self.emitted_files.insert(resolved_target.into());
     }
 }
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct ResolvedDependency {
+    pub finalized: FileDependency,
+    pub original: DependencyRelation,
+}
+
+impl ResolvedDependency {
+    pub fn cleaned(self) -> Self {
+        Self {
+            finalized: FileDependency {
+                from: path_clean::clean(self.finalized.from),
+                to: path_clean::clean(self.finalized.to),
+            },
+            original: self.original,
+        }
+    }
+}
+

@@ -1,7 +1,7 @@
-use macro_types::{environment::{AccumulatedEffects, PathResolver, SourceContext}, helpers::srcset::SrcsetCandidate, project::{DependencyRelation, FileDependency, FileInput, ResolvedDependencies, ResolvedDependency}};
+use macro_types::{environment::{AccumulatedEffects, SourcePathResolver, SourceContext}, helpers::srcset::SrcsetCandidate, project::{DependencyRelation, FileDependency, FileInput, ResolvedDependencies, ResolvedDependency}};
 use once_cell::sync::Lazy;
 use xml_ast::{AttributeMap, TagBuf};
-use std::collections::HashSet;
+use std::{collections::HashSet, path::{Path, PathBuf}};
 
 // ————————————————————————————————————————————————————————————————————————————
 // CONSTANTS
@@ -119,7 +119,7 @@ fn process_path_if_needed(
 pub fn resolve_virtual_path_attributes(
     tag: &TagBuf,
     attributes: &mut AttributeMap,
-    resolver: PathResolver,
+    resolver: SourcePathResolver,
     resolved_dependencies: &mut ResolvedDependencies,
 ) {
     let tag = tag.as_normalized();
@@ -147,7 +147,7 @@ pub fn resolve_virtual_path_attributes(
 
 fn rewrite_path_mut(
     href: &mut String,
-    resolver: PathResolver,
+    resolver: SourcePathResolver,
     resolved_dependencies: &mut ResolvedDependencies,
 ) {
     let _ = resolver;
@@ -162,94 +162,54 @@ fn rewrite_path_mut(
         return
     }
     // - -
-    let file_dependency = decoded_virtual_path.as_file_dependency();
-    let resolved_target_path = file_dependency.resolved_target_path();
+    let resolved = resolve_dependency_relation(&resolver, &decoded_virtual_path);
+    let resolved = match resolved {
+        Some(x) => x,
+        None => {
+            eprintln!("⚠️ TODO: resolve output path for target {href:?}");
+            *href = decoded_virtual_path.to;
+            return
+        }
+    };
+    // - -
+    let resolved_origin = resolver.host_context.file_input().source.to_path_buf();
+    let relative = pathdiff::diff_paths(&resolved, resolved_origin.parent().unwrap()).unwrap();
+    // - -
+    *href = relative.to_str().unwrap().to_string();
     // - -
     let resolved_dependency = ResolvedDependency {
         finalized: FileDependency {
-            from: {
-                resolver.host_context.file_input().source.to_path_buf()
-            },
-            to: {
-                resolved_target_path
-            }
+            from: resolved_origin,
+            to: relative,
         },
-        original: decoded_virtual_path.clone(),
+        original: decoded_virtual_path,
     };
+    // let resolved_dependency = resolved_dependency.cleaned();
     resolved_dependencies.include_dependency(resolved_dependency);
-    // - -
-    *href = decoded_virtual_path.to;
 }
 
-// fn rewrite_path_mut(
-//     href: &mut String,
-//     resolver: &PathResolver,
-//     resolved_dependencies: &mut ResolvedDependencies,
-// ) {
-//     let decoded_virtual_path = EncodedVirtualPath::decode(&href).unwrap();
-//     let resolved_origin = resolver.host_context.input_rule.resolved_target_path(resolver.project_context());
-//     let is_external = web_compiler_common::is_external_url(&decoded_virtual_path.rel);
-//     *href = decoded_virtual_path.rel.clone();
-//     if is_external {
-//         return
-//     }
-
-//     let mut debug_parts = Vec::<String>::new();
-//     let resolved = resolve_ref(&resolver, ResolveRefTask {
-//         link: decoded_virtual_path.clone(),
-//         resolved_origin: resolved_origin.clone(),
-//     });
-//     let resolved = match resolved {
-//         Some(x) => x,
-//         None => {
-//             let debug_parts = debug_parts
-//                 .into_iter()
-//                 .filter(|x| !x.is_empty())
-//                 .collect::<Vec<_>>()
-//                 .join(" ");
-//             eprintln!("⚠️ TODO: resolve output path for target {href:?} {debug_parts}");
-//             *href = decoded_virtual_path.rel.clone();
-//             return
-//         }
-//     };
-
-//     // - DEBUG -
-//     debug_parts.extend(vec![
-//         format!("(resolved: {resolved:?})"),
-//         format!("(from host: {:?})", resolved_origin),
-//     ]);
-//     let debug_parts = debug_parts
-//         .into_iter()
-//         .filter(|x| !x.is_empty())
-//         .collect::<Vec<_>>()
-//         .join(" ");
-
-//     let relative = pathdiff::diff_paths(&resolved, resolved_origin.parent().unwrap()).unwrap();
-
-//     // eprintln!("⚠️ TODO: resolve output path for target {href:?} {debug_parts} => {relative:?}");
-    
-    
-//     // - -
-//     // eprintln!("⚠️ TODO: resolve output path for target {href:?} {debug_parts}: {resolver:#?}");
-
-//     // - FINALIZE -
-//     // *href = decoded_virtual_path.rel.clone();
-//     *href = relative.to_str().unwrap().to_string();
-
-//     let resolved_dependency = ResolvedDependency {
-//         finalized: FileDependency {
-//             origin: resolved_origin,
-//             target: relative,
-//         },
-//         original: decoded_virtual_path,
-//     };
-
-//     resolved_dependencies.include_dependency(resolved_dependency);
-// }
-
-// struct ResolveRefTask {
-//     /// Figure out the resolved output that this points to.
-//     pub link: EncodedVirtualPath,
-//     /// Resolve the (resolved) link relative to this host location
-//     pub resolved_origin: PathBuf,
-// }
+fn resolve_dependency_relation(
+    resolver: &SourcePathResolver,
+    dependency: &DependencyRelation,
+) -> Option<PathBuf> {
+    // - -
+    if let Some(input_rule) = resolver.lookup_input_rule(dependency) {
+        let link_resolved = {
+            input_rule.public
+                .as_ref()
+                .map(|x| x.to_path_buf())
+                .unwrap_or_else(|| input_rule.source.clone())
+        };
+        Some(link_resolved)
+    }
+    // - -
+    else if let Some(relation) = resolver.lookup_dependency(dependency) {
+        let dependency = relation.as_file_dependency();
+        let link_resolved = path_clean::clean(dependency.resolved_target_path());
+        Some(link_resolved)
+    }
+    // - -
+    else {
+        None
+    }
+}

@@ -100,7 +100,7 @@ impl<'a> MacroRuntime<'a> {
 
 /// Provides path resolution for source files and dependencies relative to output structure.
 #[derive(Debug, Clone, Copy)]
-pub struct PathResolver<'a> {
+pub struct SourcePathResolver<'a> {
     /// List of source input files (e.g. HTML, JS, CSS).
     pub inputs: &'a [FileInput],
     /// List of paths referenced by input files (HTML, CSS, etc.) that do not have their own output rules.
@@ -119,3 +119,26 @@ pub struct PathResolver<'a> {
     pub host_context: SourceContext<'a>,
 }
 
+impl<'a> SourcePathResolver<'a> {
+    pub fn lookup_input_rule(&self, relation: &DependencyRelation) -> Option<&'a FileInput> {
+        let dependency = relation.as_file_dependency();
+        let target = {
+            let parent_dir = dependency.from.parent().unwrap();
+            path_clean::clean(parent_dir.join(dependency.to.as_path()))
+        };
+        self.inputs
+            .iter()
+            .find(|input| {
+                path_clean::clean(&input.source) == target
+            })
+    }
+    pub fn lookup_dependency(&self, relation: &DependencyRelation) -> Option<&'a DependencyRelation> {
+        let dependency = relation.as_file_dependency();
+        let target = path_clean::clean(dependency.resolved_target_path());
+        self.dependencies
+            .iter()
+            .find(|dep| {
+                path_clean::clean(dep.as_file_dependency().resolved_target_path()) == target
+            })
+    }
+}
