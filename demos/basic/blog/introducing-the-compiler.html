@@ -1,2 +1,40 @@
-<h1>Introducing the Web Compiler</h1>
-<p>This is the first post in the blog. It outlines the philosophy behind using pure HTML and compile-time components for site generation.</p>
+<nav aria-label="Breadcrumb">
+    <ol class="breadcrumb" itemscope itemtype="https://schema.org/BreadcrumbList">
+        <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+            <a itemprop="item" href="../pages/index.html">
+                <span itemprop="name">Home</span>
+            </a>
+            <meta itemprop="position" content="1" />
+        </li>
+        <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem">
+            <a itemprop="item" href="../pages/blog.html">
+                <span itemprop="name">Blog</span>
+            </a>
+            <meta itemprop="position" content="2" />
+        </li>
+        <li itemprop="itemListElement" itemscope itemtype="https://schema.org/ListItem" aria-current="page">
+            <a itemprop="item" href="./introducing-the-compiler.html">
+                <span itemprop="name">Introducing the Web Compiler</span>
+            </a>
+            <meta itemprop="position" content="3" />
+        </li>
+    </ol>
+</nav>
+
+<h1 data-title>Introducing the Web Compiler</h1>
+<p>This is the first post in the blog. It outlines the philosophy behind using pure HTML and compile-time components for
+    site generation.</p>
+
+<style>
+    .breadcrumb {
+        list-style: none;
+        padding: 0;
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .breadcrumb li + li::before {
+        content: "›";
+        color: #403d3d;
+    }
+</style>

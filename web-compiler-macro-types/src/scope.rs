@@ -45,8 +45,8 @@ pub enum BinderValue {
 }
 
 impl BinderValue {
-    pub fn node(node: Node) -> Self {
-        Self::Markup(MarkupBinderValue(node))
+    pub fn node(node: impl Into<Node>) -> Self {
+        Self::Markup(MarkupBinderValue(node.into()))
     }
     pub fn fragment(nodes: Vec<Node>) -> Self {
         Self::Markup(MarkupBinderValue(Node::Fragment(Fragment::from_nodes(nodes))))
@@ -55,6 +55,12 @@ impl BinderValue {
     pub fn as_markup(&self) -> Option<&MarkupBinderValue> {
         match self {
             Self::Markup(x) => Some(x),
+            _ => None,
+        }
+    }
+    pub fn as_fragment(&self) -> Option<&Fragment> {
+        match self {
+            Self::Markup(MarkupBinderValue(node)) => node.as_fragment(),
             _ => None,
         }
     }

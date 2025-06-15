@@ -25,7 +25,7 @@ impl TagRewriteRule for StyleMacroTag {
             .map(|stylesheet| {
                 let Element { tag, attributes, children: _ } = element;
                 let children = Fragment::from_nodes(vec![
-                    Node::text(stylesheet),
+                    Node::text(stylesheet.value),
                 ]);
                 Node::Element(Element {
                     tag,
@@ -42,7 +42,7 @@ impl TagRewriteRule for StyleMacroTag {
         let environment = ();
         let css_post_processor = CssPostprocessor::new(&environment);
         let result = css_post_processor.execute(&text_contents);
-        let children = Fragment::from_nodes(vec![Node::text(result)]);
+        let children = Fragment::from_nodes(vec![Node::text(result.value)]);
         Node::element(tag, attributes, children)
     }
 }

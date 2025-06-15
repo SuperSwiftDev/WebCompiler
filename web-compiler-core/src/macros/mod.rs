@@ -3,6 +3,8 @@ mod enumerate;
 mod include;
 mod provision;
 mod context;
+mod bind;
+mod inject;
 
 use std::rc::Rc;
 
@@ -11,15 +13,18 @@ pub use enumerate::*;
 pub use include::*;
 pub use provision::*;
 pub use context::*;
+pub use bind::*;
+pub use inject::*;
 
 use macro_types::macro_tag::{MacroTag, MacroTagSet};
 
-// pub static STANDARD_MACRO_TAGS: &'static [i8] = &[];
 pub fn standard_macro_tags() -> Vec<Rc<dyn MacroTag>> {
     vec![
         Rc::new(ContentMacroTag),
-        Rc::new(EnumerateMacroTag),
         Rc::new(IncludeMacroTag),
+        Rc::new(EnumerateMacroTag),
+        Rc::new(BindMacroTag),
+        Rc::new(InjectMacroTag),
         Rc::new(ProvisionMacroTag),
         Rc::new(ContextMacroTag),
     ]

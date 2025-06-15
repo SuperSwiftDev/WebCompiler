@@ -48,6 +48,12 @@ impl Node {
             _ => None,
         }
     }
+    pub fn to_element(self) -> Option<Element> {
+        match self {
+            Self::Element(x) => Some(x),
+            _ => None,
+        }
+    }
     pub fn lookup_element_attribute(&self, key: impl AsRef<str>) -> Option<&str> {
         self.as_element()
             .and_then(|element| {
@@ -67,6 +73,12 @@ impl Debug for Node {
             Self::Element(element) => element.fmt(f),
             Self::Fragment(nodes) => nodes.fmt(f),
         }
+    }
+}
+
+impl From<Element> for Node {
+    fn from(value: Element) -> Self {
+        Node::Element(value)
     }
 }
 

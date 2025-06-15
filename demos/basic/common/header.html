@@ -1,5 +1,8 @@
-<header>
+<header class="site-header">
     <nav>
+        <a href="../pages/index.html" class="logo-container">
+            <img src="../assets/logo.png" alt="Your Company Name">
+        </a>
         <ol>
             <li><a href="../pages/index.html">Home</a></li>
             <li><a href="../pages/about.html">About</a></li>
@@ -7,3 +10,33 @@
         </ol>
     </nav>
 </header>
+
+<style>
+    .site-header {
+        border-bottom: 1px solid #c3c3c3;
+        margin-bottom: 10px;
+    }
+    .site-header nav {
+        display: grid;
+        grid-template-columns: min-content 1fr auto;
+        align-items: center;
+    }
+    .site-header .logo-container img {
+        max-width: 120px;
+    }
+    .site-header ol {
+        padding: 0;
+        margin: 0;
+        list-style: none;
+        display: flex;
+        justify-content: space-around;
+        font-size: 1.2rem;
+    }
+    .site-header li {
+        display: flex;
+    }
+    .site-header li a {
+        text-decoration: none;
+        padding: 10px;
+    }
+</style>

@@ -117,6 +117,7 @@ pub struct SourcePathResolver<'a> {
     pub dependencies: &'a [DependencyRelation],
     /// Project-wide layout context (project root + output dir + host source info).
     pub host_context: SourceContext<'a>,
+    pub project_context: &'a ProjectContext,
 }
 
 impl<'a> SourcePathResolver<'a> {

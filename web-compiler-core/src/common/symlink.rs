@@ -18,39 +18,31 @@ use pathdiff::diff_paths;
 
 const DEBUG_MODE: bool = false;
 
-// /// Create a symbolic link at `link_path` pointing to `target_path`.
-// /// Handles platform differences and ensures parent directories exist.
-// pub fn create_symlink<P: AsRef<Path>, Q: AsRef<Path>>(target_path: P, link_path: Q) -> std::io::Result<()> {
-//     let target_path = target_path.as_ref();
-//     let link_path = link_path.as_ref();
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SymlinkStatus {
+    NoOP,
+    Updated,
+}
 
-//     // Ensure parent directory exists
-//     if let Some(parent) = link_path.parent() {
-//         fs::create_dir_all(parent)?;
-//     }
-
-//     // Remove existing file or link
-//     if link_path.exists() {
-//         fs::remove_file(link_path)?;
-//     }
-
-//     #[cfg(unix)]
-//     {
-//         symlink(target_path, link_path)?;
-//     }
-
-//     #[cfg(windows)]
-//     {
-//         symlink_file(target_path, link_path)?;
-//     }
-
-//     Ok(())
-// }
+impl SymlinkStatus {
+    pub fn is_no_op(&self) -> bool {
+        match self {
+            Self::NoOP => true,
+            _ => false,
+        }
+    }
+    pub fn is_updated(&self) -> bool {
+        match self {
+            Self::Updated => true,
+            _ => false,
+        }
+    }
+}
 
 /// Create a symbolic link at `link_path` pointing to `source_path`; only if needed.
 /// 
 /// Handles platform differences and ensures parent directories exist.
-pub fn create_relative_symlink(source_path: impl AsRef<Path>, link_path: impl AsRef<Path>) -> Result<(), Box<dyn std::error::Error>> {
+pub fn create_relative_symlink(source_path: impl AsRef<Path>, link_path: impl AsRef<Path>) -> Result<SymlinkStatus, Box<dyn std::error::Error>> {
     let source_path= path_clean::clean(source_path);
     let link_path = path_clean::clean(link_path);
     let link_dir = link_path.parent().expect("Link must have a parent");
@@ -84,7 +76,7 @@ pub fn create_relative_symlink(source_path: impl AsRef<Path>, link_path: impl As
             if DEBUG_MODE {
                 println!("✅ Symlink already exists and is correct: {:?}", link_path.display());
             }
-            return Ok(());
+            return Ok(SymlinkStatus::NoOP);
         } else {
             if DEBUG_MODE {
                 println!("⚠️ Symlink exists but points elsewhere. Replacing it.");
@@ -108,5 +100,5 @@ pub fn create_relative_symlink(source_path: impl AsRef<Path>, link_path: impl As
         );
     }
 
-    Ok(())
+    Ok(SymlinkStatus::Updated)
 }

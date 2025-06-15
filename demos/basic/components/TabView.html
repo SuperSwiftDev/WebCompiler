@@ -1,17 +1,16 @@
-<bind host get-attribute="id" as="id"/>
+<!-- <bind path="host@id" as="id"></bind> -->
+
 <!--
 @component TabView
 -->
 <div data-component="TabView" id="{{id}}">
     <aside>
         <ol>
-            <enumerate target="content" as="item">
-                <bind from="item" get-attribute="data-key" as="key"/>
-                <bind from="item" get-attribute="data-label" as="label"/>
+            <enumerate path="content" as="item">
+                <bind path="item@data-key" as="key"></bind>
+                <bind path="item@data-label" as="label"></bind>
                 <li>
-                    <button data-key="{{key}}">
-                        <value for="label"></value>
-                    </button>
+                    <span><inject path="label"></inject></span>
                 </li>
             </enumerate>
         </ol>

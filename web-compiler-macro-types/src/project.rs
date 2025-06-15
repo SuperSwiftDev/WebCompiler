@@ -19,13 +19,19 @@ pub struct ProjectContext {
 // FILE INPUTS
 // ————————————————————————————————————————————————————————————————————————————
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FileInput {
     pub source: PathBuf,
     pub public: Option<PathBuf>,
 }
 
 impl FileInput {
+    pub fn cleaned(self) -> Self {
+        Self {
+            source: path_clean::clean(self.source),
+            public: self.public.map(path_clean::clean),
+        }
+    }
     pub fn resolved_public_path(&self, project_context: &ProjectContext) -> PathBuf {
         self.public
             .as_ref()

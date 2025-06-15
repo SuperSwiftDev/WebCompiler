@@ -176,8 +176,9 @@ fn rewrite_path_mut(
         }
     };
     // - -
-    let resolved_origin = resolver.host_context.file_input().source.to_path_buf();
+    let resolved_origin = resolver.host_context.file_input().resolved_public_path(resolver.project_context);
     let relative = pathdiff::diff_paths(&resolved, resolved_origin.parent().unwrap()).unwrap();
+    // println!("{resolved:?} <~> {:?} => {relative:?}", resolved_origin.parent());
     // - -
     *href = relative.to_str().unwrap().to_string();
     // - -

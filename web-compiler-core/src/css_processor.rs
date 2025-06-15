@@ -14,6 +14,47 @@ use macro_types::project::DependencyRelation;
 use macro_types::environment::{AccumulatedEffects, MacroIO, SourceContext, MacroRuntime};
 use io_types::Effectful;
 
+// ————————————————————————————————————————————————————————————————————————————
+// BASICS
+// ————————————————————————————————————————————————————————————————————————————
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ModifiedFlag {
+    Default,
+    Modified,
+}
+
+impl ModifiedFlag {
+    pub fn mark_modified_mut(&mut self) {
+        *self = ModifiedFlag::Modified;
+    }
+    pub fn union(&self, other: Self) -> Self {
+        match (self, other) {
+            (Self::Default, Self::Default) => Self::Default,
+            (Self::Default, Self::Modified) => Self::Modified,
+            (Self::Modified, Self::Default) => Self::Modified,
+            (Self::Modified, Self::Modified) => Self::Modified,
+        }
+    }
+    pub fn is_modified(&self) -> bool {
+        match self {
+            Self::Modified => true,
+            Self::Default => false,
+        }
+    }
+}
+
+impl Default for ModifiedFlag {
+    fn default() -> Self {
+        ModifiedFlag::Default
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct Payload<Value> {
+    pub value: Value,
+    pub modified: ModifiedFlag,
+}
 
 // ————————————————————————————————————————————————————————————————————————————
 // STYLE TAG PRE-PROCESSOR
@@ -22,17 +63,19 @@ use io_types::Effectful;
 pub struct CssPreprocessor<'a> {
     effects: AccumulatedEffects,
     source_context: SourceContext<'a>,
+    modified: ModifiedFlag,
 }
 
 impl<'a> CssPreprocessor<'a> {
     pub fn new(source_context: SourceContext<'a>) -> Self {
-        Self { effects: Default::default(), source_context }
+        Self { effects: Default::default(), source_context, modified: ModifiedFlag::default() }
     }
-    pub fn execute(mut self, source_code: &str) -> MacroIO<String> {
+    pub fn execute(mut self, source_code: &str) -> MacroIO<Payload<String>> {
         let mut stylesheet = StyleSheet::parse(source_code, ParserOptions::default()).unwrap();
         let mut visitor = CssPreprocessorVisitor {
             effects: &mut self.effects,
             source_context: self.source_context,
+            modified: &mut self.modified,
         };
         stylesheet.visit(&mut visitor).unwrap();
         // - -
@@ -41,15 +84,30 @@ impl<'a> CssPreprocessor<'a> {
             .to_css(printer_options)
             .unwrap();
         // - -
-        MacroIO::wrap(res.code).and_modify_context(|ctx| {
-            ctx.extend(self.effects);
-        })
+        MacroIO::wrap(res.code)
+            .and_modify_context(|ctx| {
+                ctx.extend(self.effects);
+            })
+            .map(|result| {
+                if self.modified.is_modified() {
+                    Payload {
+                        value: result,
+                        modified: self.modified,
+                    }
+                } else {
+                    Payload {
+                        value: source_code.to_string(),
+                        modified: self.modified,
+                    }
+                }
+            })
     }
 }
 
 struct CssPreprocessorVisitor<'a> {
     effects: &'a mut AccumulatedEffects,
     source_context: SourceContext<'a>,
+    modified: &'a mut ModifiedFlag,
 }
 
 impl<'a, 'i> Visitor<'i> for CssPreprocessorVisitor<'a> {
@@ -62,9 +120,13 @@ impl<'a, 'i> Visitor<'i> for CssPreprocessorVisitor<'a> {
     fn visit_url(&mut self, url: &mut Url<'i>) -> Result<(), Self::Error> {
         let url_string = url.url.to_string();
         let dependency = self.source_context.file_input().with_dependency_relation(&url_string);
+        if dependency.is_external_target() {
+            return Ok(())
+        }
         let encoded_url = dependency.encode();
         self.effects.dependencies.insert(dependency);
         url.url = encoded_url.into();
+        self.modified.mark_modified_mut();
         Ok(())
     }
 }
@@ -75,29 +137,42 @@ impl<'a, 'i> Visitor<'i> for CssPreprocessorVisitor<'a> {
 
 pub struct CssPostprocessor<'a> {
     environment: &'a (),
+    modified: ModifiedFlag,
 }
 
 impl<'a> CssPostprocessor<'a> {
     pub fn new(environment: &'a ()) -> Self {
-        Self { environment }
+        Self { environment, modified: ModifiedFlag::default() }
     }
-    pub fn execute(self, source_code: &str) -> String {
+    pub fn execute(mut self, source_code: &str) -> Payload<String> {
         let mut stylesheet = StyleSheet::parse(source_code, ParserOptions::default()).unwrap();
         
         let mut visitor = CssPostprocessorVisitor {
             environment: self.environment,
+            modified: &mut self.modified,
         };
         
         stylesheet.visit(&mut visitor ).unwrap();
         
         let res: lightningcss::stylesheet::ToCssResult = stylesheet.to_css(PrinterOptions { minify: false, ..Default::default() }).unwrap();
 
-        res.code
+        if self.modified.is_modified() {
+            Payload {
+                value: res.code,
+                modified: self.modified,
+            }
+        } else {
+            Payload {
+                value: source_code.to_string(),
+                modified: self.modified,
+            }
+        }
     }
 }
 
 struct CssPostprocessorVisitor<'a> {
     environment: &'a (),
+    modified: &'a mut ModifiedFlag,
 }
 
 impl<'a, 'i> Visitor<'i> for CssPostprocessorVisitor<'a> {
@@ -122,10 +197,12 @@ impl<'a, 'i> Visitor<'i> for CssPostprocessorVisitor<'a> {
                     .to_string()
             })
             .unwrap_or_else(|| url_string.clone());
+        if url.url.to_string() == decoded_url {
+            return Ok(())
+        }
         url.url = decoded_url.into();
         Ok(())
     }
 }
-
 
 

@@ -117,10 +117,12 @@ impl SourcePipeline {
             .into_iter()
             .chain(effects.deferred_dependencies.clone().into_iter())
             .collect::<Vec<_>>();
+        // println!("deferred_dependencies: {:#?}", effects.deferred_dependencies);
         let path_resolver = SourcePathResolver {
             inputs: &self.all_input_rules,
             dependencies: &dependencies,
             host_context: self.source_context().to_owned(),
+            project_context: &self.pipeline_spec.project,
         };
         let mut resolved_dependencies = ResolvedDependencies::default();
         let mut post_processor = PostProcessor::new(
@@ -138,7 +140,7 @@ impl SourcePipeline {
         // let html_string = node.format_document();
         let resolved_public_path = self.file_input.resolved_public_path(&self.pipeline_spec.project);
         let output_path = self.file_input.to_output_file_path(&self.pipeline_spec.project);
-        write_output_file_smart(&output_path, &html_string);
+        crate::common::path_utils::write_output_file_smart(&output_path, html_string.as_bytes());
         self.resolved_dependencies.emitted_files.insert(resolved_public_path);
     }
 }
@@ -210,23 +212,4 @@ pub fn format_error(error: &dyn std::error::Error, file_path: Option<&Path>, ori
     }
 }
 
-fn write_output_file_smart(file_path: impl AsRef<Path>, contents: &str) {
-    let file_path = file_path.as_ref();
-    let new_bytes = contents.as_bytes();
-
-    let file_needs_write = match std::fs::read(file_path) {
-        Ok(existing_bytes) => {
-            existing_bytes != new_bytes
-        },
-        Err(_) => true, // file doesn't exist or can't be read
-    };
-
-    if file_needs_write {
-        if let Some(parent_dir) = file_path.parent() {
-            std::fs::create_dir_all(parent_dir).unwrap();
-        }
-        println!("> writing {file_path:?}");
-        std::fs::write(file_path, new_bytes).unwrap();
-    }
-}
 
