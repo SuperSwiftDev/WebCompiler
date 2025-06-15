@@ -1,5 +1,5 @@
-root = "."
-output_dir = "output"
+[project]
+output = "output"
 template = "templates/global.html"
 
 [[sources]]

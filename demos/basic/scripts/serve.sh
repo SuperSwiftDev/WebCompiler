@@ -1,9 +1,11 @@
 set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_DIR="${SCRIPT_DIR}/../../.."
-cd "$PROJECT_DIR/demos/basic"
+SITE_DIR="${SCRIPT_DIR}/.."
+# PROJECT_DIR="${SCRIPT_DIR}/../../.."
+# cd "$PROJECT_DIR/demos/basic"
 
-# http-server -p 8001 output
+cd "$SITE_DIR"
 
-echo "$(pwd)"
+http-server -p 8001 output
+

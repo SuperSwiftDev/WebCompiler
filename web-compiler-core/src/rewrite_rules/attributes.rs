@@ -1,7 +1,11 @@
-use macro_types::{environment::{AccumulatedEffects, SourcePathResolver, SourceContext}, helpers::srcset::SrcsetCandidate, project::{DependencyRelation, FileDependency, FileInput, ResolvedDependencies, ResolvedDependency}};
 use once_cell::sync::Lazy;
 use xml_ast::{AttributeMap, TagBuf};
-use std::{collections::HashSet, path::{Path, PathBuf}};
+use std::collections::HashSet;
+use std::path::PathBuf;
+
+use macro_types::environment::{AccumulatedEffects, SourcePathResolver, SourceContext};
+use macro_types::helpers::srcset::SrcsetCandidate;
+use macro_types::project::{DependencyRelation, FileDependency, ResolvedDependencies, ResolvedDependency};
 
 // ————————————————————————————————————————————————————————————————————————————
 // CONSTANTS

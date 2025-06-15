@@ -1,13 +1,17 @@
+pub mod manifest;
+pub mod cli;
+
 use std::path::PathBuf;
 
 use web_compiler_core::pipeline::{GlobalPipelineSpec, SourcePipeline};
 use web_compiler_macro_types::project::{FileInput, ProjectContext, ResolvedDependencies};
 
 fn main() {
-    // println!("Hello, world!");
-    process();
+    let cli = cli::CommandLineInterface::load();
+    cli.execute();
 }
 
+#[allow(unused)]
 fn process() {
     let project_root = "demos/basic";
     std::env::set_current_dir(project_root).unwrap();
