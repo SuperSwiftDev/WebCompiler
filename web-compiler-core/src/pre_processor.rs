@@ -1,5 +1,6 @@
 #![allow(unused)]
 use io_types::Effectful;
+use lightningcss::error;
 use macro_types::environment::{AccumulatedEffects, LexicalEnvironment, MacroIO, SourceContext, MacroRuntime};
 use macro_types::macro_tag::MacroTagSet;
 use macro_types::project::FileInput;
@@ -25,9 +26,18 @@ impl<'a> PreProcessor<'a> {
             .file_input()
             .load_source_file()
             .map_err(PreProcessError::StdIo)?;
-        let source_tree = xml_ast::parse_xml_to_ast(&source)
-            .map_err(PreProcessError::ParserError)?;
-        let source_tree = Node::Fragment(source_tree);
+        let source_tree = {
+            let output = xml_ast::parse_str_auto(&source);
+            if !output.errors.is_empty() {
+                let path = self.runtime.source_context();
+                let path = path.file_input().source_file().to_str().unwrap();
+                for error in output.errors {
+                    eprintln!("Error while processing '{path}': {error}");
+                }
+            }
+            output.output
+        };
+        // let source_tree = Node::Fragment(source_tree);
         let output = xml_ast::transform::apply_effectful_markup_transformer(source_tree, self, scope);
         Ok(output)
     }
@@ -36,14 +46,17 @@ impl<'a> PreProcessor<'a> {
 #[derive(Debug)]
 pub enum PreProcessError {
     StdIo(std::io::Error),
-    ParserError(String),
+    ParserErrors(Vec<String>),
 }
 
 impl std::fmt::Display for PreProcessError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::StdIo(error) => write!(f, "{error}"),
-            Self::ParserError(error) => write!(f, "{error}"),
+            Self::ParserErrors(errors) => {
+                let error = errors.to_owned().join(" • ");
+                write!(f, "{error}")
+            },
         }
     }
 }

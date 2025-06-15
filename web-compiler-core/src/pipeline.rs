@@ -163,11 +163,11 @@ impl std::error::Error for PipelineError {}
 // HELPERS
 // ————————————————————————————————————————————————————————————————————————————
 
-fn log_error(error: &dyn std::error::Error, file_path: Option<&Path>, original: Option<&Path>) {
+pub fn log_error(error: &dyn std::error::Error, file_path: Option<&Path>, original: Option<&Path>) {
     eprintln!("{}", format_error(error, file_path, original))
 }
 
-fn format_error(error: &dyn std::error::Error, file_path: Option<&Path>, original: Option<&Path>) -> String {
+pub fn format_error(error: &dyn std::error::Error, file_path: Option<&Path>, original: Option<&Path>) -> String {
     let mut parts = vec![format!("{}", error)];
     let mut source = error.source();
 

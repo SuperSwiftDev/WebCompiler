@@ -1,0 +1,32 @@
+[package]
+name = "web-compiler-markup-parser"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+tendril = "0.4"
+# html5ever = { version = "0.31" }
+# markup5ever = { version = "0.16" }
+# xml5ever = { version = "0.22" }
+# markup5ever_rcdom = { version = "0.3.0" }
+
+[dependencies.html5ever]
+version = "0.31"
+git = "https://github.com/servo/html5ever.git"
+rev = "0b37b54"
+
+[dependencies.markup5ever]
+version = "0.16"
+git = "https://github.com/servo/html5ever.git"
+rev = "0b37b54"
+
+[dependencies.xml5ever]
+version = "0.22"
+git = "https://github.com/servo/html5ever.git"
+rev = "0b37b54"
+
+[dependencies.markup5ever_rcdom]
+version = "0.3.0"
+git = "https://github.com/servo/html5ever.git"
+rev = "0b37b54"
+

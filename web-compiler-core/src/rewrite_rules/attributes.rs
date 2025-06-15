@@ -1,4 +1,4 @@
-use macro_types::{environment::{AccumulatedEffects, PathResolver, SourceContext}, helpers::srcset::SrcsetCandidate, project::{DependencyRelation, ResolvedDependencies}};
+use macro_types::{environment::{AccumulatedEffects, PathResolver, SourceContext}, helpers::srcset::SrcsetCandidate, project::{DependencyRelation, FileDependency, FileInput, ResolvedDependencies, ResolvedDependency}};
 use once_cell::sync::Lazy;
 use xml_ast::{AttributeMap, TagBuf};
 use std::collections::HashSet;
@@ -157,14 +157,26 @@ fn rewrite_path_mut(
         None => return
     };
     // - -
-    // let resolved_dependency = ResolvedDependency {
-    //     finalized: FileDependency {
-    //         origin: resolved_origin,
-    //         target: relative,
-    //     },
-    //     original: decoded_virtual_path,
-    // };
-    // resolved_dependencies.include_dependency(resolved_dependency);
+    if decoded_virtual_path.is_external_target() {
+        *href = decoded_virtual_path.to;
+        return
+    }
+    // - -
+    let file_dependency = decoded_virtual_path.as_file_dependency();
+    let resolved_target_path = file_dependency.resolved_target_path();
+    // - -
+    let resolved_dependency = ResolvedDependency {
+        finalized: FileDependency {
+            from: {
+                resolver.host_context.file_input().source.to_path_buf()
+            },
+            to: {
+                resolved_target_path
+            }
+        },
+        original: decoded_virtual_path.clone(),
+    };
+    resolved_dependencies.include_dependency(resolved_dependency);
     // - -
     *href = decoded_virtual_path.to;
 }

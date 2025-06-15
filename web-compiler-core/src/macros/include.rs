@@ -46,8 +46,8 @@ impl MacroTag for IncludeMacroTag {
                             let source_context = runtime.source_context();
                             let source_path = source_context.file_input().source.as_path();
                             match error {
-                                PreProcessError::ParserError(error) => {
-                                    eprintln!("⚠️ [{source_path:?} -> {embedded_path:?}]: {error}");
+                                PreProcessError::ParserErrors(errors) => {
+                                    eprintln!("⚠️ [{source_path:?} -> {embedded_path:?}]: {errors:?}");
                                 }
                                 PreProcessError::StdIo(error) => {
                                     if error.kind() == std::io::ErrorKind::NotFound {
