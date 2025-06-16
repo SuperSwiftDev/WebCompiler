@@ -88,6 +88,7 @@ impl<'a> EffectfulMarkupTransformer for PreProcessor<'a> {
         scope: &mut Self::Scope,
     ) -> MacroIO<Node> {
         let mut effects = AccumulatedEffects::default();
+        crate::rewrite_rules::attributes::resolve_attribute_path_expressions(&mut attributes, scope, &self.runtime);
         crate::rewrite_rules::attributes::virtualize_attribute_paths(
             &tag,
             &mut attributes,

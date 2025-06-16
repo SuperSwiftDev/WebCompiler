@@ -1,8 +1,10 @@
+use std::collections::BTreeMap;
+
 use macro_types::macro_tag::MacroTag;
 use macro_types::environment::{MacroIO, MacroRuntime};
 use macro_types::project::FileInput;
-use macro_types::scope::BinderValue;
-use xml_ast::Node;
+use macro_types::scope::{BinderValue, JsonBinderValue};
+use xml_ast::{AttributeMap, Node};
 
 use crate::pre_processor::{PreProcessError, PreProcessor};
 
@@ -27,11 +29,17 @@ impl MacroTag for IncludeMacroTag {
                 if let Some(src_value) = attributes.get("src").cloned() {
                     let dependency = runtime.source_context().file_input().with_dependency_relation(src_value.as_str());
                     // - SCOPE -
-                    // let host_object = attributes
-                    //     .into_iter()
-                    //     .filter(|(key, _)| key.as_str() != "src");
+                    let host_object = attributes
+                        .clone()
+                        .into_iter()
+                        .filter(|(key, _)| key.as_str() != "src")
+                        .map(|(key, value)| {
+                            (key.as_str().to_owned(), JsonBinderValue::json_string(value.as_str().to_owned()))
+                        })
+                        .collect::<Vec<_>>();
+                    let host_object = BinderValue::object(host_object);
                     embedded_scope.binding_scope.insert("content", BinderValue::fragment(children));
-                    // embedded_scope.binding_scope.insert("host", BinderValue::object(host_object));
+                    embedded_scope.binding_scope.insert("host", host_object);
                     // - LOAD - 
                     let embedded_path = runtime.source_context().file_input().source_dir().join(src_value.as_str());
                     let new_input_file = FileInput {

@@ -51,7 +51,13 @@ impl BinderValue {
     pub fn fragment(nodes: Vec<Node>) -> Self {
         Self::Markup(MarkupBinderValue(Node::Fragment(Fragment::from_nodes(nodes))))
     }
-    // pub fn object(map: impl IntoIterator<Item = (String, )>)
+    pub fn object(map: impl IntoIterator<Item = (String, JsonBinderValue)>) -> Self {
+        let map = map.into_iter().collect::<BTreeMap<_, _>>();
+        Self::Json(JsonBinderValue::Object(map))
+    }
+    pub fn json_string(text: impl Into<String>) -> Self {
+        Self::Json(JsonBinderValue::String(text.into()))
+    }
     pub fn as_markup(&self) -> Option<&MarkupBinderValue> {
         match self {
             Self::Markup(x) => Some(x),
@@ -70,6 +76,13 @@ impl BinderValue {
             _ => None,
         }
     }
+    pub fn try_cast_to_string(&self) -> Option<&str> {
+        match self {
+            Self::Markup(MarkupBinderValue(Node::Text(text))) => Some(text),
+            Self::Json(JsonBinderValue::String(string)) => Some(string),
+            _ => None
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -83,6 +96,16 @@ pub enum JsonBinderValue {
     String(String),
     Array(Vec<JsonBinderValue>),
     Object(BTreeMap<String, JsonBinderValue>),
+}
+
+impl JsonBinderValue {
+    pub fn json_string(text: impl Into<String>) -> Self {
+        Self::String(text.into())
+    }
+    pub fn object(map: impl IntoIterator<Item = (String, JsonBinderValue)>) -> Self {
+        let map = map.into_iter().collect::<BTreeMap<_, _>>();
+        JsonBinderValue::Object(map)
+    }
 }
 
 // ————————————————————————————————————————————————————————————————————————————

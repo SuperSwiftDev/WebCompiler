@@ -1,9 +1,10 @@
+use macro_types::scope::{BinderValue, JsonBinderValue, MarkupBinderValue};
 use once_cell::sync::Lazy;
-use xml_ast::{AttributeMap, TagBuf};
+use xml_ast::{AttributeMap, AttributeValueBuf, Node, TagBuf};
 use std::collections::HashSet;
 use std::path::PathBuf;
 
-use macro_types::environment::{AccumulatedEffects, SourcePathResolver, SourceContext};
+use macro_types::environment::{AccumulatedEffects, MacroRuntime, SourceContext, SourcePathResolver};
 use macro_types::helpers::srcset::SrcsetCandidate;
 use macro_types::project::{DependencyRelation, FileDependency, ResolvedDependencies, ResolvedDependency};
 
@@ -217,4 +218,45 @@ fn resolve_dependency_relation(
     else {
         None
     }
+}
+
+// ————————————————————————————————————————————————————————————————————————————
+// RESOLVE ATTRIBUTE PATH EXPRESSIONS
+// ————————————————————————————————————————————————————————————————————————————
+
+pub fn resolve_attribute_path_expressions(
+    attributes: &mut AttributeMap,
+    scope: &mut macro_types::environment::LexicalEnvironment,
+    runtime: &MacroRuntime,
+) {
+    attributes.map_mut(|_, value| {
+        let rewrite = value
+            .as_str()
+            .trim()
+            .strip_prefix("{{")
+            .and_then(|value| {
+                value.strip_suffix("}}")
+            })
+            .and_then(|target| {
+                let result = scope.binding_scope.lookup(target);
+                if result.is_none() {
+                    let source_file = runtime.source_context();
+                    let source_file = source_file.file_input().source_file();
+                    eprintln!("⚠️ {source_file:?} failed to resolve binding `{target}`");
+                }
+                Some((target, result?))
+            })
+            .and_then(|(target, value)| {
+                let result = value.try_cast_to_string();
+                if result.is_none() {
+                    let source_file = runtime.source_context();
+                    let source_file = source_file.file_input().source_file();
+                    eprintln!("⚠️ {source_file:?} failed to resolve binding `{target}` as string");
+                }
+                result
+            });
+        if let Some(rewrite) = rewrite {
+            *value = AttributeValueBuf::literal(rewrite);
+        }
+    });
 }

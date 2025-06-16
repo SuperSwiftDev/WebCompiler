@@ -321,6 +321,14 @@ impl Debug for AttributeValueBuf {
 #[derive(Clone, Default)]
 pub struct AttributeMap(IndexMap<AttributeKeyBuf, AttributeValueBuf>);
 
+impl AttributeMap {
+    pub fn map_mut(&mut self, mut apply: impl FnMut(&AttributeKeyBuf, &mut AttributeValueBuf) -> ()) {
+        for (key, value) in self.0.iter_mut() {
+            apply(key, value)
+        }
+    }
+}
+
 impl Debug for AttributeMap {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.0.fmt(f)
