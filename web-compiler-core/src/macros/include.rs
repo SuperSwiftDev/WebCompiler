@@ -1,10 +1,8 @@
-use std::collections::BTreeMap;
-
 use macro_types::macro_tag::MacroTag;
 use macro_types::environment::{MacroIO, MacroRuntime};
 use macro_types::project::FileInput;
 use macro_types::scope::{BinderValue, JsonBinderValue};
-use xml_ast::{AttributeMap, Node};
+use xml_ast::Node;
 
 use crate::pre_processor::{PreProcessError, PreProcessor};
 
