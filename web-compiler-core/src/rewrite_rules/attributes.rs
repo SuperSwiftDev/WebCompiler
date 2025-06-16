@@ -1,6 +1,5 @@
-use macro_types::scope::{BinderValue, JsonBinderValue, MarkupBinderValue};
 use once_cell::sync::Lazy;
-use xml_ast::{AttributeMap, AttributeValueBuf, Node, TagBuf};
+use xml_ast::{AttributeMap, AttributeValueBuf, TagBuf};
 use std::collections::HashSet;
 use std::path::PathBuf;
 
