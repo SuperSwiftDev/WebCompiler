@@ -1,5 +1,9 @@
-use std::path::PathBuf;
+pub mod pre;
+pub mod post;
+pub mod macros;
+pub mod rewrites;
 
+use std::path::PathBuf;
 use macro_types::environment::{AccumulatedEffects, LexicalEnvironment, MacroIO, MacroRuntime, SourcePathResolver, SourceContext};
 use macro_types::macro_tag::MacroTagSet;
 use macro_types::project::{FileInput, ProjectContext, ResolvedDependencies};
@@ -7,8 +11,8 @@ use macro_types::scope::BinderValue;
 use macro_types::tag_rewrite_rule::TagRewriteRuleSet;
 use xml_ast::Node;
 
-use crate::post_processor::PostProcessor;
-use crate::pre_processor::{PreProcessError, PreProcessor};
+pub use post::PostProcessor;
+pub use pre::{PreProcessError, PreProcessor};
 
 #[derive(Clone)]
 pub struct GlobalPipelineSpec {

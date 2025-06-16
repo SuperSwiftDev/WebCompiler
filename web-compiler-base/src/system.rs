@@ -1,3 +1,4 @@
+//! Types for defining the overall compiler.
 use std::collections::HashSet;
 use std::path::PathBuf;
 
@@ -6,7 +7,7 @@ use macro_types::macro_tag::MacroTagSet;
 use macro_types::project::{FileInput, ProjectContext, ResolvedDependencies};
 use macro_types::tag_rewrite_rule::TagRewriteRuleSet;
 
-pub struct CompilerInput {
+pub struct CompilerInputRule {
     pub source: FileInput,
     /// Will override the global template.
     pub local_template: Option<PathBuf>,
@@ -14,26 +15,26 @@ pub struct CompilerInput {
 
 pub struct CompilerInputs {
     pub global_template: Option<PathBuf>,
-    pub sources: Vec<CompilerInput>,
+    pub sources: Vec<CompilerInputRule>,
     pub project: ProjectContext,
 }
 
-pub struct CompilerSpec {
+pub struct CompilerRuntime {
     pub macros: MacroTagSet,
     pub rules: TagRewriteRuleSet,
 }
 
-impl Default for CompilerSpec {
+impl Default for CompilerRuntime {
     fn default() -> Self {
-        CompilerSpec {
-            macros: crate::macros::standard_macro_tag_set(),
-            rules: crate::rewrite_rules::standard_tag_rewrite_rule_set(),
+        CompilerRuntime {
+            macros: crate::markup::macros::standard_macro_tag_set(),
+            rules: crate::markup::rewrites::standard_tag_rewrite_rule_set(),
         }
     }
 }
 
 pub struct CompilerPipeline {
-    pub spec: CompilerSpec,
+    pub spec: CompilerRuntime,
     pub inputs: CompilerInputs,
 }
 
@@ -42,7 +43,7 @@ impl CompilerPipeline {
         let resolved_dependencies = self.inputs.sources
             .iter()
             .map(|input| {
-                let global_pipeline_spec = crate::pipeline::GlobalPipelineSpec {
+                let global_pipeline_spec = crate::markup::GlobalPipelineSpec {
                     macros: self.spec.macros.clone(),
                     rules: self.spec.rules.clone(),
                     project: self.inputs.project.clone(),
@@ -52,7 +53,7 @@ impl CompilerPipeline {
                     .iter()
                     .map(|x| x.source.clone())
                     .collect::<Vec<_>>();
-                let mut input_pipeline = crate::pipeline::SourcePipeline {
+                let mut input_pipeline = crate::markup::SourcePipeline {
                     file_input: input.source.clone(),
                     pipeline_spec: global_pipeline_spec,
                     local_template: input.local_template.clone(),
@@ -155,4 +156,5 @@ fn emit_assets(asset_files: &[FileInput], project_context: &ProjectContext) {
         }
     }
 }
+
 

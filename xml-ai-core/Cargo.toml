@@ -1,0 +1,14 @@
+[package]
+name = "xml-ai-core"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+unindent = "0.2.3"
+
+web-compiler-xml-ast = { path = "../web-compiler-xml-ast" }
+
+xml-ai-client = { path = "../xml-ai-client" }
+
+# web-compiler-io-types = { path = "../web-compiler-io-types" }
+# web-compiler-macro-types = { path = "../web-compiler-macro-types" }

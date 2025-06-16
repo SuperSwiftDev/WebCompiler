@@ -1,4 +1,9 @@
 #![allow(unused)]
+
+extern crate web_compiler_macro_types as macro_types;
+extern crate web_compiler_io_types as io_types;
+
+
 use std::convert::Infallible;
 use std::path::PathBuf;
 use lightningcss::printer::PrinterOptions;

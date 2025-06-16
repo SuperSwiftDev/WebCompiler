@@ -30,6 +30,9 @@ impl TagBuf {
     pub fn as_normalized(&self) -> &str {
         &self.normalized
     }
+    pub fn matches(&self, other: &Self) -> bool {
+        self.as_normalized() == other.as_normalized()
+    }
 }
 
 impl std::fmt::Display for TagBuf {

@@ -64,6 +64,20 @@ impl Node {
     pub fn empty() -> Self {
         Self::Fragment(Fragment::empty())
     }
+    pub fn extract_elements(self) -> Vec<Element> {
+        match self {
+            Node::Element(x) => vec![x],
+            Node::Fragment(xs) => xs.extract_elements(),
+            Node::Text(_) => Vec::new(),
+        }
+    }
+    pub fn extract_text_strict(self) -> Result<Vec<String>, ()> {
+        match self {
+            Node::Element(_) => Err(()),
+            Node::Fragment(xs) => xs.extract_text_strict(),
+            Node::Text(x) => Ok(vec![x]),
+        }
+    }
 }
 
 impl Debug for Node {
@@ -105,6 +119,12 @@ impl Element {
         self.children.extend(children);
         self
     }
+    pub fn extract_child_elements(self) -> Vec<Element> {
+        self.children.extract_elements()
+    }
+    pub fn extract_child_text_strict(self) -> Result<Vec<String>, ()> {
+        self.children.extract_text_strict()
+    }
 }
 
 impl std::fmt::Debug for Element {
@@ -136,8 +156,42 @@ pub struct Fragment {
 }
 
 impl Fragment {
+    pub fn extract_elements(self) -> Vec<Element> {
+        self
+            .to_vec()
+            .into_iter()
+            .flat_map(|node| {
+                match node {
+                    Node::Element(x) => vec![x],
+                    Node::Fragment(xs) => xs.extract_elements(),
+                    Node::Text(_) => Vec::default(),
+                }
+            })
+            .collect::<Vec<_>>()
+    }
+    pub fn extract_text_strict(self) -> Result<Vec<String>, ()> {
+        let mut results = Vec::<String>::with_capacity(self.len());
+        for node in self.to_vec() {
+            match node {
+                Node::Element(_) => return Err(()),
+                Node::Fragment(xs) => {
+                    results.extend(xs.extract_text_strict()?);
+                },
+                Node::Text(x) => {
+                    results.push(x);
+                },
+            }
+        }
+        Ok(results)
+    }
+}
+
+impl Fragment {
     pub fn empty() -> Self {
         Self { nodes: Vec::with_capacity(0) }
+    }
+    pub fn as_node_slice(&self) -> &[Node] {
+        &self.nodes
     }
     pub fn from_nodes(nodes: impl Into<Vec<Node>>) -> Self {
         Self { nodes: nodes.into() }

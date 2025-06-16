@@ -88,14 +88,14 @@ impl<'a> EffectfulMarkupTransformer for PreProcessor<'a> {
         scope: &mut Self::Scope,
     ) -> MacroIO<Node> {
         let mut effects = AccumulatedEffects::default();
-        crate::rewrite_rules::attributes::resolve_attribute_path_expressions(&mut attributes, scope, &self.runtime);
-        crate::rewrite_rules::attributes::virtualize_attribute_paths(
+        super::rewrites::attributes::resolve_attribute_path_expressions(&mut attributes, scope, &self.runtime);
+        super::rewrites::attributes::virtualize_attribute_paths(
             &tag,
             &mut attributes,
             &mut effects,
             self.runtime.source_context(),
         );
-        let attribute_command = crate::rewrite_rules::attributes::AttributeCommand::from_attributes(
+        let attribute_command = super::rewrites::attributes::AttributeCommand::from_attributes(
             &mut attributes,
             scope,
             &self.runtime
@@ -108,7 +108,7 @@ impl<'a> EffectfulMarkupTransformer for PreProcessor<'a> {
                 ctx.extend(effects)
             })
             .map(|node| {
-                use crate::rewrite_rules::attributes::AttributeCommand;
+                use super::rewrites::attributes::AttributeCommand;
                 match attribute_command {
                     Some(attribute_command) => {
                         attribute_command.apply(node)
@@ -126,4 +126,5 @@ impl<'a> EffectfulMarkupTransformer for PreProcessor<'a> {
         self.runtime.macros.try_evaluate(element, scope, &self.runtime)
     }
 }
+
 
