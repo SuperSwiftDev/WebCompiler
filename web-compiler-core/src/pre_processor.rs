@@ -95,11 +95,27 @@ impl<'a> EffectfulMarkupTransformer for PreProcessor<'a> {
             &mut effects,
             self.runtime.source_context(),
         );
+        let attribute_command = crate::rewrite_rules::attributes::AttributeCommand::from_attributes(
+            &mut attributes,
+            scope,
+            &self.runtime
+        );
         let children = Fragment::from_nodes(children);
         let element = Element { tag, attributes, children };
-        self.runtime.rules.try_apply_pre_processors(element, scope, &self.runtime).and_modify_context(|ctx| {
-            ctx.extend(effects)
-        })
+        self.runtime.rules
+            .try_apply_pre_processors(element, scope, &self.runtime)
+            .and_modify_context(|ctx| {
+                ctx.extend(effects)
+            })
+            .map(|node| {
+                use crate::rewrite_rules::attributes::AttributeCommand;
+                match attribute_command {
+                    Some(attribute_command) => {
+                        attribute_command.apply(node)
+                    }
+                    None => node
+                }
+            })
     }
 
     /// Optional override to intercept an element before its children are traversed.

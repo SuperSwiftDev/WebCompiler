@@ -1,5 +1,6 @@
+use macro_types::scope::BinderValue;
 use once_cell::sync::Lazy;
-use xml_ast::{AttributeMap, AttributeValueBuf, TagBuf};
+use xml_ast::{AttributeMap, AttributeValueBuf, Node, TagBuf};
 use std::collections::HashSet;
 use std::path::PathBuf;
 
@@ -229,9 +230,101 @@ pub fn resolve_attribute_path_expressions(
     runtime: &MacroRuntime,
 ) {
     attributes.map_mut(|_, value| {
-        let rewrite = value
-            .as_str()
-            .trim()
+        let rewrite = ResolvedPathExpression::parse(
+            value.as_str(),
+            scope,
+            runtime
+        )
+        .and_then(|x| x.try_cast_to_string(runtime));
+        if let Some(rewrite) = rewrite {
+            *value = AttributeValueBuf::literal(rewrite);
+        }
+    });
+}
+
+// ————————————————————————————————————————————————————————————————————————————
+// DSL HELPERS
+// ————————————————————————————————————————————————————————————————————————————
+
+
+#[derive(Debug, Clone)]
+pub enum AttributeCommand {
+    Toggle { keep: bool },
+}
+
+impl AttributeCommand {
+    pub fn from_attributes(
+        attributes: &mut AttributeMap,
+        scope: &mut macro_types::environment::LexicalEnvironment,
+        runtime: &MacroRuntime,
+    ) -> Option<Self> {
+        if let Some(if_control) = Self::parse_if_control_attribute(attributes, scope, runtime) {
+            return Some(if_control)
+        }
+        if let Some(if_control) = Self::parse_unless_control_attribute(attributes, scope, runtime) {
+            return Some(if_control)
+        }
+        None
+    }
+    pub fn parse_if_control_attribute(
+        attributes: &mut AttributeMap,
+        scope: &mut macro_types::environment::LexicalEnvironment,
+        runtime: &MacroRuntime,
+    ) -> Option<Self> {
+        let value = attributes.get("if")?;
+        ResolvedPathExpression::parse(
+            value.as_str(),
+            scope,
+            runtime
+        )
+        .and_then(|x| x.try_cast_to_boolean(runtime))
+        .map(|toggle| Self::Toggle { keep: toggle })
+    }
+    pub fn parse_unless_control_attribute(
+        attributes: &mut AttributeMap,
+        scope: &mut macro_types::environment::LexicalEnvironment,
+        runtime: &MacroRuntime,
+    ) -> Option<Self> {
+        let value = attributes.get("unless")?;
+        ResolvedPathExpression::parse(
+            value.as_str(),
+            scope,
+            runtime
+        )
+        .and_then(|x| x.try_cast_to_boolean(runtime))
+        .map(|toggle| Self::Toggle { keep: !toggle })
+    }
+    pub fn apply(self, node: Node) -> Node {
+        match self {
+            Self::Toggle { keep } => {
+                if keep {
+                    node
+                } else {
+                    Node::empty()
+                }
+            }
+        }
+    }
+}
+
+// fn resolve_path_expression(
+//     value: &str,
+//     scope: &mut macro_types::environment::LexicalEnvironment,
+//     runtime: &MacroRuntime,
+// ) -> Option<>
+
+struct ResolvedPathExpression<'a> {
+    pub expression: &'a str,
+    pub value: &'a BinderValue,
+}
+
+impl<'a> ResolvedPathExpression<'a> {
+    pub fn parse(
+        raw: &'a str,
+        scope: &'a mut macro_types::environment::LexicalEnvironment,
+        runtime: &'a MacroRuntime,
+    ) -> Option<Self> {
+        raw .trim()
             .strip_prefix("{{")
             .and_then(|value| {
                 value.strip_suffix("}}")
@@ -243,19 +336,28 @@ pub fn resolve_attribute_path_expressions(
                     let source_file = source_file.file_input().source_file();
                     eprintln!("⚠️ {source_file:?} failed to resolve binding `{target}`");
                 }
-                Some((target, result?))
+                Some(Self {
+                    expression: target,
+                    value: result?,
+                })
             })
-            .and_then(|(target, value)| {
-                let result = value.try_cast_to_string();
-                if result.is_none() {
-                    let source_file = runtime.source_context();
-                    let source_file = source_file.file_input().source_file();
-                    eprintln!("⚠️ {source_file:?} failed to resolve binding `{target}` as string");
-                }
-                result
-            });
-        if let Some(rewrite) = rewrite {
-            *value = AttributeValueBuf::literal(rewrite);
+    }
+    pub fn try_cast_to_string(self, runtime: &'a MacroRuntime) -> Option<String> {
+        let result = self.value.try_cast_to_string();
+        if result.is_none() {
+            let source_file = runtime.source_context();
+            let source_file = source_file.file_input().source_file();
+            eprintln!("⚠️ {source_file:?} failed to resolve binding `{}` as string", self.expression);
         }
-    });
+        result.map(|x| x.to_string())
+    }
+    pub fn try_cast_to_boolean(self, runtime: &'a MacroRuntime) -> Option<bool> {
+        let result = self.value.try_cast_to_boolean();
+        if result.is_none() {
+            let source_file = runtime.source_context();
+            let source_file = source_file.file_input().source_file();
+            eprintln!("⚠️ {source_file:?} failed to resolve binding `{}` as boolean", self.expression);
+        }
+        result
+    }
 }

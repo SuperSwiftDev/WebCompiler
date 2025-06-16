@@ -83,6 +83,12 @@ impl BinderValue {
             _ => None
         }
     }
+    pub fn try_cast_to_boolean(&self) -> Option<bool> {
+        match self {
+            Self::Json(JsonBinderValue::Bool(bool)) => Some(*bool),
+            _ => None
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
