@@ -9,7 +9,7 @@ use lightningcss::values::url::Url;
 use lightningcss::visit_types;
 use lightningcss::visitor::{Visit, VisitTypes, Visitor};
 
-use macro_types::project::{DependencyRelation, ResolvedDependencies};
+use macro_types::project::DependencyRelation;
 use macro_types::environment::{AccumulatedEffects, MacroIO, SourceHostRef};
 use io_types::Effectful;
 
@@ -134,34 +134,7 @@ impl<'a, 'i> Visitor<'i> for CssPreprocessorVisitor<'a> {
 // CSS POST-PROCESSOR
 // ————————————————————————————————————————————————————————————————————————————
 
-
-#[derive(Debug)]
-pub enum ResolverTarget<'a> {
-    Effects {
-        source_host: SourceHostRef<'a>,
-        effects: &'a mut AccumulatedEffects,
-    },
-    Resolved {
-        resolved_dependencies: &'a mut ResolvedDependencies,
-    },
-}
-
-#[allow(unused)]
-impl<'a> ResolverTarget<'a> {
-    pub fn register(&self, dependency_relation: DependencyRelation) {
-        match self {
-            Self::Effects { source_host, effects } => {
-                unimplemented!()
-            }
-            Self::Resolved { resolved_dependencies } => {
-                unimplemented!()
-            }
-        }
-    }
-}
-
 pub struct CssPostprocessor<'a> {
-    // resolver_environment: ResolverTarget<'a>,
     modified: ModifiedFlag,
     environment: &'a (),
 }
@@ -212,7 +185,6 @@ impl<'a, 'i> Visitor<'i> for CssPostprocessorVisitor<'a> {
     }
 
     fn visit_url(&mut self, url: &mut Url<'i>) -> Result<(), Self::Error> {
-        // println!("resolve_virtual_path: {:?}", url.url);
         let url_string = url.url.to_string();
         let decoded_virtual_path = DependencyRelation::decode(&url_string);
         let decoded_virtual_path = match decoded_virtual_path {
