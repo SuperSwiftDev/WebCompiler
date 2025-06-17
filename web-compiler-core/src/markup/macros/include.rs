@@ -1,8 +1,10 @@
 use macro_types::macro_tag::MacroTag;
-use macro_types::environment::{MacroIO, MacroRuntime};
+use macro_types::environment::{MacroIO, SourceHost};
 use macro_types::project::FileInput;
 use macro_types::scope::{BinderValue, JsonBinderValue};
 use xml_ast::Node;
+
+use crate::system::CompilerRuntime;
 
 use super::super::pre::{PreProcessError, PreProcessor};
 
@@ -10,13 +12,14 @@ use super::super::pre::{PreProcessError, PreProcessor};
 pub struct IncludeMacroTag;
 
 impl MacroTag for IncludeMacroTag {
+    type Runtime = CompilerRuntime;
     fn tag_name(&self) -> &'static str { "include" }
     fn apply(
         &self,
         attributes: xml_ast::AttributeMap,
         children: xml_ast::Fragment,
         scope: &mut macro_types::environment::LexicalEnvironment,
-        runtime: &MacroRuntime,
+        runtime: &Self::Runtime,
     ) -> MacroIO<xml_ast::Node> {
         let mut child_scope = scope.to_owned();
         let mut embedded_scope = scope.to_owned();

@@ -1,7 +1,9 @@
 use macro_types::macro_tag::MacroTag;
-use macro_types::environment::{MacroIO, MacroRuntime};
+use macro_types::environment::MacroIO;
 use macro_types::scope::BinderValue;
 use xml_ast::{Fragment, Node};
+
+use crate::system::CompilerRuntime;
 
 use super::super::pre::PreProcessor;
 
@@ -11,13 +13,14 @@ use super::super::pre::PreProcessor;
 pub struct EnumerateMacroTag;
 
 impl MacroTag for EnumerateMacroTag {
+    type Runtime = CompilerRuntime;
     fn tag_name(&self) -> &'static str { "enumerate" }
     fn apply(
         &self,
         attributes: xml_ast::AttributeMap,
         children: xml_ast::Fragment,
         scope: &mut macro_types::environment::LexicalEnvironment,
-        runtime: &MacroRuntime,
+        runtime: &Self::Runtime,
     ) -> MacroIO<xml_ast::Node> {
         let children = children.to_vec();
         attributes

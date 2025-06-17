@@ -18,7 +18,9 @@ pub use inject::*;
 
 use macro_types::macro_tag::{MacroTag, MacroTagSet};
 
-pub fn standard_macro_tags() -> Vec<Rc<dyn MacroTag>> {
+use crate::system::CompilerRuntime;
+
+pub fn standard_macro_tags() -> Vec<Rc<dyn MacroTag<Runtime = CompilerRuntime>>> {
     vec![
         Rc::new(ContentMacroTag),
         Rc::new(IncludeMacroTag),
@@ -30,7 +32,7 @@ pub fn standard_macro_tags() -> Vec<Rc<dyn MacroTag>> {
     ]
 }
 
-pub fn standard_macro_tag_set() -> MacroTagSet {
+pub fn standard_macro_tag_set() -> MacroTagSet<CompilerRuntime> {
     MacroTagSet::from_vec(standard_macro_tags())
 }
 

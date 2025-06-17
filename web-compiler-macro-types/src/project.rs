@@ -90,6 +90,12 @@ impl FileDependency {
     pub fn resolved_target_path(&self) -> PathBuf {
         self.from.parent().unwrap().join(&self.to)
     }
+    pub fn cleaned(self) -> Self {
+        Self {
+            from: path_clean::clean(self.from),
+            to: path_clean::clean(self.to),
+        }
+    }
 }
 
 /// Arbitrary URLs / local relative paths / anything that may appear in an HTML context.
@@ -146,17 +152,17 @@ const NOT_VIRTUAL_PATH_SAFE: AsciiSet = NON_ALPHANUMERIC
 
 #[derive(Debug, Clone, Default)]
 pub struct ResolvedDependencies {
-    pub dependencies: HashSet<ResolvedDependency>,
+    pub dependency_relations: HashSet<ResolvedDependencyRelation>,
     pub emitted_files: HashSet<PathBuf>,
 }
 
 impl ResolvedDependencies {
     pub fn extend(&mut self, other: Self) {
-        self.dependencies.extend(other.dependencies);
+        self.dependency_relations.extend(other.dependency_relations);
         self.emitted_files.extend(other.emitted_files);
     }
-    pub fn include_dependency(&mut self, dependency: ResolvedDependency) {
-        self.dependencies.insert(dependency);
+    pub fn include_dependency_relation(&mut self, dependency: ResolvedDependencyRelation) {
+        self.dependency_relations.insert(dependency);
     }
     pub fn include_emitted_file(&mut self, resolved_target: impl Into<PathBuf>) {
         let _ = self.emitted_files.insert(resolved_target.into());
@@ -164,12 +170,12 @@ impl ResolvedDependencies {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ResolvedDependency {
+pub struct ResolvedDependencyRelation {
     pub finalized: FileDependency,
     pub original: DependencyRelation,
 }
 
-impl ResolvedDependency {
+impl ResolvedDependencyRelation {
     pub fn cleaned(self) -> Self {
         Self {
             finalized: FileDependency {
@@ -180,4 +186,28 @@ impl ResolvedDependency {
         }
     }
 }
+
+// ————————————————————————————————————————————————————————————————————————————
+// RESOLVED ASSET DEPENDENCIES
+// ————————————————————————————————————————————————————————————————————————————
+
+// #[derive(Debug, Clone, Default)]
+// pub struct ResolvedAssetDependencies {
+//     pub dependencies: HashSet<ResolvedDependency>,
+//     pub emitted_files: HashSet<PathBuf>,
+// }
+
+// impl ResolvedAssetDependencies {
+//     pub fn extend(&mut self, other: Self) {
+//         self.dependencies.extend(other.dependencies);
+//         self.emitted_files.extend(other.emitted_files);
+//     }
+//     pub fn include_dependency(&mut self, dependency: ResolvedDependency) {
+//         self.dependencies.insert(dependency);
+//     }
+//     pub fn include_emitted_file(&mut self, resolved_target: impl Into<PathBuf>) {
+//         let _ = self.emitted_files.insert(resolved_target.into());
+//     }
+// }
+
 

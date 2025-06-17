@@ -1,12 +1,13 @@
+//! Types for defining the overall compiler.
 use std::collections::HashSet;
 use std::path::PathBuf;
 
-use macro_types::environment::SourceContext;
+use macro_types::environment::{Featureset, SourceHostRef, SourceHost};
 use macro_types::macro_tag::MacroTagSet;
 use macro_types::project::{FileInput, ProjectContext, ResolvedDependencies};
 use macro_types::tag_rewrite_rule::TagRewriteRuleSet;
 
-pub struct CompilerInput {
+pub struct CompilerInputRule {
     pub source: FileInput,
     /// Will override the global template.
     pub local_template: Option<PathBuf>,
@@ -14,26 +15,86 @@ pub struct CompilerInput {
 
 pub struct CompilerInputs {
     pub global_template: Option<PathBuf>,
-    pub sources: Vec<CompilerInput>,
+    pub sources: Vec<CompilerInputRule>,
     pub project: ProjectContext,
 }
 
-pub struct CompilerSpec {
-    pub macros: MacroTagSet,
-    pub rules: TagRewriteRuleSet,
+#[derive(Clone)]
+pub struct CompilerFeatureset {
+    pub macros: MacroTagSet<CompilerRuntime>,
+    pub rules: TagRewriteRuleSet<CompilerRuntime>,
 }
 
-impl Default for CompilerSpec {
+impl Default for CompilerFeatureset {
     fn default() -> Self {
-        CompilerSpec {
-            macros: crate::macros::standard_macro_tag_set(),
-            rules: crate::rewrite_rules::standard_tag_rewrite_rule_set(),
+        Self {
+            macros: crate::markup::macros::standard_macro_tag_set(),
+            rules: crate::markup::rewrites::standard_tag_rewrite_rule_set(),
+        }
+    }
+}
+
+impl Featureset for CompilerFeatureset {
+    type Runtime = CompilerRuntime;
+    fn macros(&self) -> &MacroTagSet<CompilerRuntime> {
+        &self.macros
+    }
+    fn rules(&self) -> &TagRewriteRuleSet<CompilerRuntime> {
+        &self.rules
+    }
+}
+
+#[derive(Clone)]
+pub struct CompilerRuntime {
+    pub featureset: CompilerFeatureset,
+    pub project: ProjectContext,
+    pub source_file: FileInput,
+}
+
+impl CompilerRuntime {
+    pub fn new(project: ProjectContext, source_file: FileInput) -> Self {
+        Self {
+            project,
+            source_file,
+            featureset: CompilerFeatureset::default(),
+        }
+    }
+    pub fn source_context(&self) -> SourceHostRef {
+        SourceHostRef {
+            project_context: &self.project,
+            file_input: &self.source_file,
+        }
+    }
+}
+
+impl Featureset for CompilerRuntime {
+    type Runtime = Self;
+    fn macros(&self) -> &MacroTagSet<Self> {
+        &self.featureset.macros
+    }
+    fn rules(&self) -> &TagRewriteRuleSet<Self> {
+        &self.featureset.rules
+    }
+}
+
+impl SourceHost for CompilerRuntime {
+    fn project(&self) -> &ProjectContext {
+        &self.project
+    }
+    fn source_file(&self) -> &FileInput {
+        &self.source_file
+    }
+    fn fork(&self, file_input: &FileInput) -> Self {
+        Self {
+            featureset: self.featureset.clone(),
+            source_file: file_input.clone(),
+            project: self.project.clone(),
         }
     }
 }
 
 pub struct CompilerPipeline {
-    pub spec: CompilerSpec,
+    pub featureset: CompilerFeatureset,
     pub inputs: CompilerInputs,
 }
 
@@ -42,9 +103,9 @@ impl CompilerPipeline {
         let resolved_dependencies = self.inputs.sources
             .iter()
             .map(|input| {
-                let global_pipeline_spec = crate::pipeline::GlobalPipelineSpec {
-                    macros: self.spec.macros.clone(),
-                    rules: self.spec.rules.clone(),
+                let global_pipeline_spec = crate::markup::GlobalPipelineSpec {
+                    macros: self.featureset.macros().to_owned(),
+                    rules: self.featureset.rules().to_owned(),
                     project: self.inputs.project.clone(),
                     global_template: self.inputs.global_template.clone(),
                 };
@@ -52,7 +113,7 @@ impl CompilerPipeline {
                     .iter()
                     .map(|x| x.source.clone())
                     .collect::<Vec<_>>();
-                let mut input_pipeline = crate::pipeline::SourcePipeline {
+                let mut input_pipeline = crate::markup::SourcePipeline {
                     file_input: input.source.clone(),
                     pipeline_spec: global_pipeline_spec,
                     local_template: input.local_template.clone(),
@@ -68,7 +129,7 @@ impl CompilerPipeline {
             });
         // - -
         // println!("resolved_dependencies: {resolved_dependencies:#?}");
-        let remaining = resolved_dependencies.dependencies
+        let remaining = resolved_dependencies.dependency_relations
             .iter()
             .filter(|dep| {
                 let target = dep.finalized.resolved_target_path();
@@ -100,10 +161,8 @@ impl CompilerPipeline {
 }
 
 fn compile_css(css_files: &[FileInput], project_context: &ProjectContext) {
+    // let mut resolved_dependencies = ResolvedDependencies::default();
     for css_file in css_files {
-        // if processed_files.contains(css_file.source_file()) {
-        //     continue;
-        // }
         let css_source = css_file.load_source_file();
         let css_source = match css_source {
             Ok(x) => x,
@@ -112,12 +171,13 @@ fn compile_css(css_files: &[FileInput], project_context: &ProjectContext) {
                 continue;
             }
         };
-        let source_context = SourceContext {
+        let source_context = SourceHostRef {
             project_context: &project_context,
             file_input: css_file,
         };
         let css_preprocessor = css::CssPreprocessor::new(source_context);
-        let css_postprocessor = css::CssPostprocessor::new(&());
+        let environment = &();
+        let css_postprocessor = css::CssPostprocessor::new(environment);
         let ( pre_processed, effects ) = css_preprocessor.execute(&css_source).collapse();
         let _ = effects; // TODO
         let post_processed = css_postprocessor.execute(&pre_processed.value);
@@ -155,4 +215,5 @@ fn emit_assets(asset_files: &[FileInput], project_context: &ProjectContext) {
         }
     }
 }
+
 

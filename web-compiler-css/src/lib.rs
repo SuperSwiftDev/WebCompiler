@@ -1,22 +1,16 @@
-#![allow(unused)]
-
 extern crate web_compiler_macro_types as macro_types;
 extern crate web_compiler_io_types as io_types;
 
 
 use std::convert::Infallible;
-use std::path::PathBuf;
 use lightningcss::printer::PrinterOptions;
 use lightningcss::stylesheet::{ParserOptions, StyleSheet};
-use lightningcss::traits::ToCss;
-use lightningcss::rules::CssRule;
-use lightningcss::values::length::LengthValue;
 use lightningcss::values::url::Url;
 use lightningcss::visit_types;
 use lightningcss::visitor::{Visit, VisitTypes, Visitor};
 
-use macro_types::project::DependencyRelation;
-use macro_types::environment::{AccumulatedEffects, MacroIO, SourceContext, MacroRuntime};
+use macro_types::project::{DependencyRelation, ResolvedDependencies};
+use macro_types::environment::{AccumulatedEffects, MacroIO, SourceHostRef};
 use io_types::Effectful;
 
 // ————————————————————————————————————————————————————————————————————————————
@@ -67,12 +61,12 @@ pub struct Payload<Value> {
 
 pub struct CssPreprocessor<'a> {
     effects: AccumulatedEffects,
-    source_context: SourceContext<'a>,
+    source_context: SourceHostRef<'a>,
     modified: ModifiedFlag,
 }
 
 impl<'a> CssPreprocessor<'a> {
-    pub fn new(source_context: SourceContext<'a>) -> Self {
+    pub fn new(source_context: SourceHostRef<'a>) -> Self {
         Self { effects: Default::default(), source_context, modified: ModifiedFlag::default() }
     }
     pub fn execute(mut self, source_code: &str) -> MacroIO<Payload<String>> {
@@ -111,7 +105,7 @@ impl<'a> CssPreprocessor<'a> {
 
 struct CssPreprocessorVisitor<'a> {
     effects: &'a mut AccumulatedEffects,
-    source_context: SourceContext<'a>,
+    source_context: SourceHostRef<'a>,
     modified: &'a mut ModifiedFlag,
 }
 
@@ -140,9 +134,36 @@ impl<'a, 'i> Visitor<'i> for CssPreprocessorVisitor<'a> {
 // CSS POST-PROCESSOR
 // ————————————————————————————————————————————————————————————————————————————
 
+
+#[derive(Debug)]
+pub enum ResolverTarget<'a> {
+    Effects {
+        source_host: SourceHostRef<'a>,
+        effects: &'a mut AccumulatedEffects,
+    },
+    Resolved {
+        resolved_dependencies: &'a mut ResolvedDependencies,
+    },
+}
+
+#[allow(unused)]
+impl<'a> ResolverTarget<'a> {
+    pub fn register(&self, dependency_relation: DependencyRelation) {
+        match self {
+            Self::Effects { source_host, effects } => {
+                unimplemented!()
+            }
+            Self::Resolved { resolved_dependencies } => {
+                unimplemented!()
+            }
+        }
+    }
+}
+
 pub struct CssPostprocessor<'a> {
-    environment: &'a (),
+    // resolver_environment: ResolverTarget<'a>,
     modified: ModifiedFlag,
+    environment: &'a (),
 }
 
 impl<'a> CssPostprocessor<'a> {
@@ -175,8 +196,11 @@ impl<'a> CssPostprocessor<'a> {
     }
 }
 
+#[allow(unused)]
 struct CssPostprocessorVisitor<'a> {
+    // resolver_environment: ResolverTarget<'a>,
     environment: &'a (),
+    // source: SourceHostRef<'a>,
     modified: &'a mut ModifiedFlag,
 }
 
@@ -190,22 +214,30 @@ impl<'a, 'i> Visitor<'i> for CssPostprocessorVisitor<'a> {
     fn visit_url(&mut self, url: &mut Url<'i>) -> Result<(), Self::Error> {
         // println!("resolve_virtual_path: {:?}", url.url);
         let url_string = url.url.to_string();
-        let decoded_url = DependencyRelation::decode(&url_string)
-            .map(|relation| {
-                if relation.is_external_target() {
-                    return relation.to
-                }
-                let path = relation.as_file_dependency().resolved_target_path();
-                path.to_str()
-                    .to_owned()
-                    .unwrap_or(relation.to.as_str())
-                    .to_string()
-            })
-            .unwrap_or_else(|| url_string.clone());
+        let decoded_virtual_path = DependencyRelation::decode(&url_string);
+        let decoded_virtual_path = match decoded_virtual_path {
+            Some(x) => x,
+            None => {
+                return Ok(())
+            }
+        };
+        if decoded_virtual_path.is_external_target() {
+            return Ok(())
+        }
+        let decoded_url = {
+            decoded_virtual_path
+                .as_file_dependency()
+                .resolved_target_path()
+                .to_str()
+                .to_owned()
+                .unwrap_or(decoded_virtual_path.to.as_str())
+                .to_string()
+        };
         if url.url.to_string() == decoded_url {
             return Ok(())
         }
-        url.url = decoded_url.into();
+        self.modified.mark_modified_mut();
+        url.url = decoded_url.clone().into();
         Ok(())
     }
 }

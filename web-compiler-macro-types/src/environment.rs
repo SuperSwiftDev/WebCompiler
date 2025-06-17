@@ -12,31 +12,6 @@ use crate::tag_rewrite_rule::TagRewriteRuleSet;
 pub use web_compiler_io_types::Effectful;
 
 // ————————————————————————————————————————————————————————————————————————————
-// SOURCE CONTEXT
-// ————————————————————————————————————————————————————————————————————————————
-
-#[derive(Debug, Clone, Copy)]
-pub struct SourceContext<'a> {
-    pub project_context: &'a ProjectContext,
-    pub file_input: &'a FileInput,
-}
-
-impl<'a> SourceContext<'a> {
-    pub fn new(project_context: &'a ProjectContext, file_input: &'a FileInput) -> Self {
-        Self { project_context, file_input }
-    }
-    pub fn new_source_file(&self, file_input: &'a FileInput) -> Self {
-        Self { project_context: self.project_context, file_input }
-    }
-    pub fn project_context(&self) -> &ProjectContext {
-        self.project_context
-    }
-    pub fn file_input(&self) -> &FileInput {
-        self.file_input
-    }
-}
-
-// ————————————————————————————————————————————————————————————————————————————
 // TOP-DOWN CONTEXT
 // ————————————————————————————————————————————————————————————————————————————
 
@@ -69,28 +44,36 @@ pub type MacroIO<T> = IO<T, AccumulatedEffects>;
 // MACRO RUNTIME
 // ————————————————————————————————————————————————————————————————————————————
 
-#[derive(Clone, Copy)]
-pub struct MacroRuntime<'a> {
-    pub project: &'a ProjectContext,
-    pub macros: &'a MacroTagSet,
-    pub rules: &'a TagRewriteRuleSet,
-    pub input: &'a FileInput,
+pub trait Featureset: Sized + Clone {
+    type Runtime: SourceHost;
+    fn macros(&self) -> &MacroTagSet<Self::Runtime>;
+    fn rules(&self) -> &TagRewriteRuleSet<Self::Runtime>;
 }
 
-impl<'a> MacroRuntime<'a> {
-    pub fn fork(&self, file_input: &'a FileInput) -> Self {
-        Self {
-            input: file_input,
-            project: &self.project,
-            macros: &self.macros,
-            rules: &self.rules,
-        }
+pub trait SourceHost: Featureset {
+    fn project(&self) -> &ProjectContext;
+    fn source_file(&self) -> &FileInput;
+    fn fork(&self, file_input: &FileInput) -> Self;
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct SourceHostRef<'a> {
+    pub project_context: &'a ProjectContext,
+    pub file_input: &'a FileInput,
+}
+
+impl<'a> SourceHostRef<'a> {
+    pub fn new(project_context: &'a ProjectContext, file_input: &'a FileInput) -> Self {
+        Self { project_context, file_input }
     }
-    pub fn source_context(&self) -> SourceContext {
-        SourceContext {
-            project_context: &self.project,
-            file_input: &self.input,
-        }
+    pub fn new_source_file(&self, file_input: &'a FileInput) -> Self {
+        Self { project_context: self.project_context, file_input }
+    }
+    pub fn project_context(&self) -> &ProjectContext {
+        self.project_context
+    }
+    pub fn file_input(&self) -> &FileInput {
+        self.file_input
     }
 }
 
@@ -116,8 +99,7 @@ pub struct SourcePathResolver<'a> {
     /// - Invalidation and dependency tracking
     pub dependencies: &'a [DependencyRelation],
     /// Project-wide layout context (project root + output dir + host source info).
-    pub host_context: SourceContext<'a>,
-    pub project_context: &'a ProjectContext,
+    pub source_host: SourceHostRef<'a>,
 }
 
 impl<'a> SourcePathResolver<'a> {

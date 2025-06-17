@@ -1,17 +1,17 @@
 use macro_types::{environment::SourcePathResolver, tag_rewrite_rule::TagRewriteRuleSet};
 use xml_ast::{traversal::ElementVisitor, Element, Node};
 
-use crate::macro_types::project::ResolvedDependencies;
+use crate::{macro_types::project::ResolvedDependencies, system::CompilerRuntime};
 
 pub struct PostProcessor<'a> {
-    pub rules: &'a TagRewriteRuleSet,
+    pub rules: &'a TagRewriteRuleSet<CompilerRuntime>,
     pub path_resolver: SourcePathResolver<'a>,
     pub resolved_dependencies: &'a mut ResolvedDependencies,
 }
 
 impl<'a> PostProcessor<'a> {
     pub fn new(
-        rules: &'a TagRewriteRuleSet,
+        rules: &'a TagRewriteRuleSet<CompilerRuntime>,
         path_resolver: SourcePathResolver<'a>,
         resolved_dependencies: &'a mut ResolvedDependencies,
     ) -> Self {

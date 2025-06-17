@@ -1,19 +1,25 @@
-use std::path::PathBuf;
+pub mod pre;
+pub mod post;
+pub mod macros;
+pub mod rewrites;
 
-use macro_types::environment::{AccumulatedEffects, LexicalEnvironment, MacroIO, MacroRuntime, SourcePathResolver, SourceContext};
+use std::path::PathBuf;
+use macro_types::environment::{AccumulatedEffects, LexicalEnvironment, MacroIO, SourcePathResolver, SourceHostRef};
 use macro_types::macro_tag::MacroTagSet;
 use macro_types::project::{FileInput, ProjectContext, ResolvedDependencies};
 use macro_types::scope::BinderValue;
 use macro_types::tag_rewrite_rule::TagRewriteRuleSet;
 use xml_ast::Node;
 
-use crate::post_processor::PostProcessor;
-use crate::pre_processor::{PreProcessError, PreProcessor};
+pub use post::PostProcessor;
+pub use pre::{PreProcessError, PreProcessor};
+
+use crate::system::{CompilerFeatureset, CompilerRuntime};
 
 #[derive(Clone)]
 pub struct GlobalPipelineSpec {
-    pub macros: MacroTagSet,
-    pub rules: TagRewriteRuleSet,
+    pub macros: MacroTagSet<CompilerRuntime>,
+    pub rules: TagRewriteRuleSet<CompilerRuntime>,
     pub project: ProjectContext,
     pub global_template: Option<PathBuf>,
 }
@@ -29,18 +35,20 @@ pub struct SourcePipeline {
 }
 
 impl SourcePipeline {
-    pub fn source_context(&self) -> SourceContext {
-        SourceContext {
+    pub fn source_context(&self) -> SourceHostRef {
+        SourceHostRef {
             project_context: &self.pipeline_spec.project,
             file_input: &self.file_input,
         }
     }
-    pub fn macro_runtime(&self) -> MacroRuntime {
-        MacroRuntime {
-            project: &self.pipeline_spec.project,
-            macros: &self.pipeline_spec.macros,
-            rules: &self.pipeline_spec.rules,
-            input: &self.file_input,
+    pub fn macro_runtime(&self) -> CompilerRuntime {
+        CompilerRuntime {
+            featureset: CompilerFeatureset {
+                macros: self.pipeline_spec.macros.clone(),
+                rules: self.pipeline_spec.rules.clone(),
+            },
+            project: self.pipeline_spec.project.clone(),
+            source_file: self.file_input.clone(),
         }
     }
     pub fn source_file_input(&self) -> &FileInput {
@@ -119,8 +127,8 @@ impl SourcePipeline {
         let path_resolver = SourcePathResolver {
             inputs: &self.all_input_rules,
             dependencies: &dependencies,
-            host_context: self.source_context().to_owned(),
-            project_context: &self.pipeline_spec.project,
+            source_host: self.source_context().to_owned(),
+            // project_context: &self.pipeline_spec.project,
         };
         let mut resolved_dependencies = ResolvedDependencies::default();
         let mut post_processor = PostProcessor::new(

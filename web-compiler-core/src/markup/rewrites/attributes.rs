@@ -4,9 +4,11 @@ use xml_ast::{AttributeMap, AttributeValueBuf, Node, TagBuf};
 use std::collections::HashSet;
 use std::path::PathBuf;
 
-use macro_types::environment::{AccumulatedEffects, MacroRuntime, SourceContext, SourcePathResolver};
+use macro_types::environment::{AccumulatedEffects, SourceHostRef, SourcePathResolver};
 use macro_types::helpers::srcset::SrcsetCandidate;
-use macro_types::project::{DependencyRelation, FileDependency, ResolvedDependencies, ResolvedDependency};
+use macro_types::project::{DependencyRelation, FileDependency, ResolvedDependencies, ResolvedDependencyRelation};
+
+use crate::system::CompilerRuntime;
 
 // ————————————————————————————————————————————————————————————————————————————
 // CONSTANTS
@@ -71,7 +73,7 @@ pub fn virtualize_attribute_paths(
     tag: &TagBuf,
     attributes: &mut AttributeMap,
     effects: &mut AccumulatedEffects,
-    source_context: SourceContext,
+    source_context: SourceHostRef,
 ) {
     if !TAG_MAY_REQUIRE_DEPENDENCY_TRACKING.contains(tag.as_normalized()) {
         return 
@@ -87,7 +89,7 @@ fn process_path_if_needed(
     tag: &TagBuf,
     key: &str,
     value: &mut String,
-    source_context: SourceContext,
+    source_context: SourceHostRef,
     effects: &mut AccumulatedEffects,
 ) {
     // REGAULR
@@ -155,8 +157,8 @@ fn rewrite_path_mut(
     resolver: SourcePathResolver,
     resolved_dependencies: &mut ResolvedDependencies,
 ) {
-    let _ = resolver;
-    let _ = resolved_dependencies;
+    // let _ = resolver;
+    // let _ = resolved_dependencies;
     let decoded_virtual_path = match DependencyRelation::decode(&href) {
         Some(x) => x,
         None => return
@@ -177,13 +179,13 @@ fn rewrite_path_mut(
         }
     };
     // - -
-    let resolved_origin = resolver.host_context.file_input().resolved_public_path(resolver.project_context);
+    let resolved_origin = resolver.source_host.file_input().resolved_public_path(resolver.source_host.project_context());
     let relative = pathdiff::diff_paths(&resolved, resolved_origin.parent().unwrap()).unwrap();
     // println!("{resolved:?} <~> {:?} => {relative:?}", resolved_origin.parent());
     // - -
     *href = relative.to_str().unwrap().to_string();
     // - -
-    let resolved_dependency = ResolvedDependency {
+    let resolved_dependency = ResolvedDependencyRelation {
         finalized: FileDependency {
             from: resolved_origin,
             to: relative,
@@ -191,7 +193,7 @@ fn rewrite_path_mut(
         original: decoded_virtual_path,
     };
     // let resolved_dependency = resolved_dependency.cleaned();
-    resolved_dependencies.include_dependency(resolved_dependency);
+    resolved_dependencies.include_dependency_relation(resolved_dependency);
 }
 
 fn resolve_dependency_relation(
@@ -227,7 +229,7 @@ fn resolve_dependency_relation(
 pub fn resolve_attribute_path_expressions(
     attributes: &mut AttributeMap,
     scope: &mut macro_types::environment::LexicalEnvironment,
-    runtime: &MacroRuntime,
+    runtime: &CompilerRuntime,
 ) {
     attributes.map_mut(|_, value| {
         let rewrite = ResolvedPathExpression::parse(
@@ -256,7 +258,7 @@ impl AttributeCommand {
     pub fn from_attributes(
         attributes: &mut AttributeMap,
         scope: &mut macro_types::environment::LexicalEnvironment,
-        runtime: &MacroRuntime,
+        runtime: &CompilerRuntime,
     ) -> Option<Self> {
         if let Some(if_control) = Self::parse_if_control_attribute(attributes, scope, runtime) {
             return Some(if_control)
@@ -269,7 +271,7 @@ impl AttributeCommand {
     pub fn parse_if_control_attribute(
         attributes: &mut AttributeMap,
         scope: &mut macro_types::environment::LexicalEnvironment,
-        runtime: &MacroRuntime,
+        runtime: &CompilerRuntime,
     ) -> Option<Self> {
         let value = attributes.get("if")?;
         ResolvedPathExpression::parse(
@@ -283,7 +285,7 @@ impl AttributeCommand {
     pub fn parse_unless_control_attribute(
         attributes: &mut AttributeMap,
         scope: &mut macro_types::environment::LexicalEnvironment,
-        runtime: &MacroRuntime,
+        runtime: &CompilerRuntime,
     ) -> Option<Self> {
         let value = attributes.get("unless")?;
         ResolvedPathExpression::parse(
@@ -322,7 +324,7 @@ impl<'a> ResolvedPathExpression<'a> {
     pub fn parse(
         raw: &'a str,
         scope: &'a mut macro_types::environment::LexicalEnvironment,
-        runtime: &'a MacroRuntime,
+        runtime: &'a CompilerRuntime,
     ) -> Option<Self> {
         raw .trim()
             .strip_prefix("{{")
@@ -342,7 +344,7 @@ impl<'a> ResolvedPathExpression<'a> {
                 })
             })
     }
-    pub fn try_cast_to_string(self, runtime: &'a MacroRuntime) -> Option<String> {
+    pub fn try_cast_to_string(self, runtime: &'a CompilerRuntime) -> Option<String> {
         let result = self.value.try_cast_to_string();
         if result.is_none() {
             let source_file = runtime.source_context();
@@ -351,7 +353,7 @@ impl<'a> ResolvedPathExpression<'a> {
         }
         result.map(|x| x.to_string())
     }
-    pub fn try_cast_to_boolean(self, runtime: &'a MacroRuntime) -> Option<bool> {
+    pub fn try_cast_to_boolean(self, runtime: &'a CompilerRuntime) -> Option<bool> {
         let result = self.value.try_cast_to_boolean();
         if result.is_none() {
             let source_file = runtime.source_context();

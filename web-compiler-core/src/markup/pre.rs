@@ -1,20 +1,22 @@
 #![allow(unused)]
 use io_types::Effectful;
 // use lightningcss::error;
-use macro_types::environment::{AccumulatedEffects, LexicalEnvironment, MacroIO, SourceContext, MacroRuntime};
+use macro_types::environment::{AccumulatedEffects, Featureset, LexicalEnvironment, MacroIO, SourceHostRef, SourceHost};
 use macro_types::macro_tag::MacroTagSet;
 use macro_types::project::FileInput;
 use xml_ast::{transform::{EffectfulMarkupTransformer, ProcessMode}, AttributeMap, Element, Fragment, Node, TagBuf};
 
-pub struct PreProcessor<'a> {
-    pub runtime: MacroRuntime<'a>,
+use crate::system::CompilerRuntime;
+
+pub struct PreProcessor {
+    pub runtime: CompilerRuntime,
 }
 
-impl<'a> PreProcessor<'a> {
-    pub fn new(runtime: MacroRuntime<'a>) -> Self {
+impl PreProcessor {
+    pub fn new(runtime: CompilerRuntime) -> Self {
         Self { runtime }
     }
-    pub fn fork(&self, file_input: &'a FileInput) -> Self {
+    pub fn fork(&self, file_input: &FileInput) -> Self {
         Self { runtime: self.runtime.fork(file_input) }
     }
     pub fn process_sequence(&self, nodes: Vec<Node>, scope: &mut LexicalEnvironment) -> MacroIO<Vec<Node>> {
@@ -63,7 +65,7 @@ impl std::fmt::Display for PreProcessError {
 
 impl std::error::Error for PreProcessError {}
 
-impl<'a> EffectfulMarkupTransformer for PreProcessor<'a> {
+impl EffectfulMarkupTransformer for PreProcessor {
     /// Output value type.
     type Output = Node;
     /// Top-down lexical environment.
@@ -102,7 +104,7 @@ impl<'a> EffectfulMarkupTransformer for PreProcessor<'a> {
         );
         let children = Fragment::from_nodes(children);
         let element = Element { tag, attributes, children };
-        self.runtime.rules
+        self.runtime.rules()
             .try_apply_pre_processors(element, scope, &self.runtime)
             .and_modify_context(|ctx| {
                 ctx.extend(effects)
@@ -123,7 +125,7 @@ impl<'a> EffectfulMarkupTransformer for PreProcessor<'a> {
     /// Like the node-level hook, this allows for rewriting or short-circuiting based
     /// on macro syntax or binding constructs.
     fn manual_top_down_element_handler(&self, element: Element, scope: &mut Self::Scope) -> MacroIO<ProcessMode<Element, Node>> {
-        self.runtime.macros.try_evaluate(element, scope, &self.runtime)
+        self.runtime.macros().try_evaluate(element, scope, &self.runtime)
     }
 }
 

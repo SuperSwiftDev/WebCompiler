@@ -1,19 +1,22 @@
 use macro_types::macro_tag::MacroTag;
-use macro_types::environment::{MacroIO, MacroRuntime};
+use macro_types::environment::MacroIO;
 use macro_types::scope::{BinderValue, JsonBinderValue};
 use xml_ast::Node;
+
+use crate::system::CompilerRuntime;
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct InjectMacroTag;
 
 impl MacroTag for InjectMacroTag {
+    type Runtime = CompilerRuntime;
     fn tag_name(&self) -> &'static str { "inject" }
     fn apply(
         &self,
         attributes: xml_ast::AttributeMap,
         _: xml_ast::Fragment,
         scope: &mut macro_types::environment::LexicalEnvironment,
-        runtime: &MacroRuntime,
+        runtime: &Self::Runtime,
     ) -> MacroIO<xml_ast::Node> {
         let injection = attributes
             .get("path")

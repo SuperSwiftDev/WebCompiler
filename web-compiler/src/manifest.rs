@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
-use web_compiler_core::compiler::{CompilerInput, CompilerInputs, CompilerPipeline, CompilerSpec};
+use web_compiler_core::system::{CompilerFeatureset, CompilerInputRule, CompilerInputs, CompilerPipeline};
 use web_compiler_macro_types::project::{FileInput, ProjectContext};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -44,7 +44,7 @@ impl Manifest {
             file_path: file_path.to_path_buf(),
         })
     }
-    pub fn to_compiler_pipeline(&self, spec: CompilerSpec) -> CompilerPipeline {
+    pub fn to_compiler_pipeline(&self, featureset: CompilerFeatureset) -> CompilerPipeline {
         let sources = self.spec.sources
             .iter()
             .flat_map(|source| {
@@ -57,7 +57,7 @@ impl Manifest {
                             .map(|prefix| {
                                 src_path.strip_prefix(prefix).ok().unwrap().to_path_buf()
                             });
-                        CompilerInput {
+                        CompilerInputRule {
                             source: FileInput {
                                 source: src_path,
                                 public: public_path,
@@ -68,15 +68,16 @@ impl Manifest {
                     .collect::<Vec<_>>()
             })
             .collect::<Vec<_>>();
+        let project = ProjectContext {
+            project_root: self.file_path.parent().unwrap().to_path_buf(),
+            output_dir: self.spec.project.output.clone(),
+        };
         CompilerPipeline {
-            spec,
+            featureset,
             inputs: CompilerInputs {
                 sources,
+                project,
                 global_template: Some(self.spec.project.template.clone()),
-                project: ProjectContext {
-                    project_root: self.file_path.parent().unwrap().to_path_buf(),
-                    output_dir: self.spec.project.output.clone(),
-                }
             },
         }
     }
