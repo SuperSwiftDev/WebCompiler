@@ -1,7 +1,8 @@
 use macro_types::{environment::SourcePathResolver, tag_rewrite_rule::TagRewriteRuleSet};
 use xml_ast::{traversal::ElementVisitor, Element, Node};
 
-use crate::{macro_types::project::ResolvedDependencies, system::CompilerRuntime};
+use crate::macro_types::project::ResolvedDependencies;
+use web_compiler_types::CompilerRuntime;
 
 pub struct PostProcessor<'a> {
     pub rules: &'a TagRewriteRuleSet<CompilerRuntime>,

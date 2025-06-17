@@ -1,163 +1,174 @@
 //! Types for defining the overall compiler.
 use std::collections::HashSet;
-use std::path::PathBuf;
 
-use macro_types::environment::{Featureset, SourceHostRef, SourceHost};
-use macro_types::macro_tag::MacroTagSet;
+use macro_types::environment::{Featureset, SourceHostRef};
 use macro_types::project::{FileInput, ProjectContext, ResolvedDependencies};
-use macro_types::tag_rewrite_rule::TagRewriteRuleSet;
+use web_compiler_types::{CompilerFeatureset, CompilerPipeline, CompilerRuntime};
 
-pub struct CompilerInputRule {
-    pub source: FileInput,
-    /// Will override the global template.
-    pub local_template: Option<PathBuf>,
-}
+// pub struct CompilerInputRule {
+//     pub source: FileInput,
+//     /// Will override the global template.
+//     pub local_template: Option<PathBuf>,
+// }
 
-pub struct CompilerInputs {
-    pub global_template: Option<PathBuf>,
-    pub sources: Vec<CompilerInputRule>,
-    pub project: ProjectContext,
-}
+// pub struct CompilerInputs {
+//     pub global_template: Option<PathBuf>,
+//     pub sources: Vec<CompilerInputRule>,
+//     pub project: ProjectContext,
+// }
 
-#[derive(Clone)]
-pub struct CompilerFeatureset {
-    pub macros: MacroTagSet<CompilerRuntime>,
-    pub rules: TagRewriteRuleSet<CompilerRuntime>,
-}
+// #[derive(Clone)]
+// pub struct CompilerFeatureset {
+//     pub macros: MacroTagSet<CompilerRuntime>,
+//     pub rules: TagRewriteRuleSet<CompilerRuntime>,
+// }
 
-impl Default for CompilerFeatureset {
-    fn default() -> Self {
-        Self {
-            macros: crate::markup::macros::standard_macro_tag_set(),
-            rules: crate::markup::rewrites::standard_tag_rewrite_rule_set(),
-        }
+// impl Default for CompilerFeatureset {
+//     fn default() -> Self {
+//         Self {
+//             macros: crate::markup::macros::standard_macro_tag_set(),
+//             rules: crate::markup::rewrites::standard_tag_rewrite_rule_set(),
+//         }
+//     }
+// }
+
+// impl Featureset for CompilerFeatureset {
+//     type Runtime = CompilerRuntime;
+//     fn macros(&self) -> &MacroTagSet<CompilerRuntime> {
+//         &self.macros
+//     }
+//     fn rules(&self) -> &TagRewriteRuleSet<CompilerRuntime> {
+//         &self.rules
+//     }
+// }
+
+// #[derive(Clone)]
+// pub struct CompilerRuntime {
+//     pub featureset: CompilerFeatureset,
+//     pub project: ProjectContext,
+//     pub source_file: FileInput,
+// }
+
+// impl CompilerRuntime {
+//     pub fn new(project: ProjectContext, source_file: FileInput) -> Self {
+//         Self {
+//             project,
+//             source_file,
+//             featureset: CompilerFeatureset::default(),
+//         }
+//     }
+//     pub fn source_context(&self) -> SourceHostRef {
+//         SourceHostRef {
+//             project_context: &self.project,
+//             file_input: &self.source_file,
+//         }
+//     }
+// }
+
+// impl Featureset for CompilerRuntime {
+//     type Runtime = Self;
+//     fn macros(&self) -> &MacroTagSet<Self> {
+//         &self.featureset.macros
+//     }
+//     fn rules(&self) -> &TagRewriteRuleSet<Self> {
+//         &self.featureset.rules
+//     }
+// }
+
+// impl SourceHost for CompilerRuntime {
+//     fn project(&self) -> &ProjectContext {
+//         &self.project
+//     }
+//     fn source_file(&self) -> &FileInput {
+//         &self.source_file
+//     }
+//     fn fork(&self, file_input: &FileInput) -> Self {
+//         Self {
+//             featureset: self.featureset.clone(),
+//             source_file: file_input.clone(),
+//             project: self.project.clone(),
+//         }
+//     }
+// }
+
+// pub struct CompilerPipeline {
+//     pub featureset: CompilerFeatureset,
+//     pub inputs: CompilerInputs,
+// }
+
+pub fn web_publishing_compiler_featureset() -> CompilerFeatureset {
+    CompilerFeatureset {
+        macros: crate::markup::macros::standard_macro_tag_set(),
+        rules: crate::markup::rewrites::standard_tag_rewrite_rule_set(),
     }
 }
 
-impl Featureset for CompilerFeatureset {
-    type Runtime = CompilerRuntime;
-    fn macros(&self) -> &MacroTagSet<CompilerRuntime> {
-        &self.macros
-    }
-    fn rules(&self) -> &TagRewriteRuleSet<CompilerRuntime> {
-        &self.rules
+pub fn web_publishing_compiler_runtime(project: ProjectContext, source_file: FileInput) -> CompilerRuntime {
+    CompilerRuntime {
+        project,
+        source_file,
+        featureset: web_publishing_compiler_featureset(),
     }
 }
 
-#[derive(Clone)]
-pub struct CompilerRuntime {
-    pub featureset: CompilerFeatureset,
-    pub project: ProjectContext,
-    pub source_file: FileInput,
-}
-
-impl CompilerRuntime {
-    pub fn new(project: ProjectContext, source_file: FileInput) -> Self {
-        Self {
-            project,
-            source_file,
-            featureset: CompilerFeatureset::default(),
-        }
-    }
-    pub fn source_context(&self) -> SourceHostRef {
-        SourceHostRef {
-            project_context: &self.project,
-            file_input: &self.source_file,
-        }
-    }
-}
-
-impl Featureset for CompilerRuntime {
-    type Runtime = Self;
-    fn macros(&self) -> &MacroTagSet<Self> {
-        &self.featureset.macros
-    }
-    fn rules(&self) -> &TagRewriteRuleSet<Self> {
-        &self.featureset.rules
-    }
-}
-
-impl SourceHost for CompilerRuntime {
-    fn project(&self) -> &ProjectContext {
-        &self.project
-    }
-    fn source_file(&self) -> &FileInput {
-        &self.source_file
-    }
-    fn fork(&self, file_input: &FileInput) -> Self {
-        Self {
-            featureset: self.featureset.clone(),
-            source_file: file_input.clone(),
-            project: self.project.clone(),
-        }
-    }
-}
-
-pub struct CompilerPipeline {
-    pub featureset: CompilerFeatureset,
-    pub inputs: CompilerInputs,
-}
-
-impl CompilerPipeline {
-    pub fn execute(&self) {
-        let resolved_dependencies = self.inputs.sources
-            .iter()
-            .map(|input| {
-                let global_pipeline_spec = crate::markup::GlobalPipelineSpec {
-                    macros: self.featureset.macros().to_owned(),
-                    rules: self.featureset.rules().to_owned(),
-                    project: self.inputs.project.clone(),
-                    global_template: self.inputs.global_template.clone(),
-                };
-                let all_input_rules = self.inputs.sources
-                    .iter()
-                    .map(|x| x.source.clone())
-                    .collect::<Vec<_>>();
-                let mut input_pipeline = crate::markup::SourcePipeline {
-                    file_input: input.source.clone(),
-                    pipeline_spec: global_pipeline_spec,
-                    local_template: input.local_template.clone(),
-                    all_input_rules,
-                    resolved_dependencies: ResolvedDependencies::default(),
-                };
-                input_pipeline.execute();
-                input_pipeline.resolved_dependencies
-            })
-            .fold(ResolvedDependencies::default(), |mut acc, item| {
-                acc.extend(item);
-                acc
-            });
-        // - -
-        // println!("resolved_dependencies: {resolved_dependencies:#?}");
-        let remaining = resolved_dependencies.dependency_relations
-            .iter()
-            .filter(|dep| {
-                let target = dep.finalized.resolved_target_path();
-                let is_emitted = resolved_dependencies.emitted_files.contains(&target);
-                let is_html_file = target.extension() == Some("html".as_ref());
-                !is_emitted && !is_html_file
-            })
-            .map(|dep| {
-                let source_path = dep.original.as_file_dependency().resolved_target_path();
-                let public_path = dep.finalized.resolved_target_path();
-                FileInput {
-                    source: source_path,
-                    public: Some(public_path),
-                }
-            })
-            .map(|x| x.cleaned())
-            .collect::<HashSet<_>>();
-        // println!("remaining: {remaining:#?}");
-        let (css_files, remaining) = remaining
-            .into_iter()
-            .partition::<Vec<_>, _>(|x| {
-                x.source.extension() == Some("css".as_ref())
-            });
-        // println!("css_files: {css_files:#?}");
-        compile_css(&css_files, &self.inputs.project);
-        // println!("remaining: {remaining:#?}");
-        emit_assets(&remaining, &self.inputs.project);
-    }
+pub fn execute_compiler_pipeline(compiler_pipeline: CompilerPipeline) {
+    let resolved_dependencies = compiler_pipeline.inputs.sources
+        .iter()
+        .map(|input| {
+            let global_pipeline_spec = crate::markup::GlobalPipelineSpec {
+                macros: compiler_pipeline.featureset.macros().to_owned(),
+                rules: compiler_pipeline.featureset.rules().to_owned(),
+                project: compiler_pipeline.inputs.project.clone(),
+                global_template: compiler_pipeline.inputs.global_template.clone(),
+            };
+            let all_input_rules = compiler_pipeline.inputs.sources
+                .iter()
+                .map(|x| x.source.clone())
+                .collect::<Vec<_>>();
+            let mut input_pipeline = crate::markup::SourcePipeline {
+                file_input: input.source.clone(),
+                pipeline_spec: global_pipeline_spec,
+                local_template: input.local_template.clone(),
+                all_input_rules,
+                resolved_dependencies: ResolvedDependencies::default(),
+            };
+            input_pipeline.execute();
+            input_pipeline.resolved_dependencies
+        })
+        .fold(ResolvedDependencies::default(), |mut acc, item| {
+            acc.extend(item);
+            acc
+        });
+    // - -
+    // println!("resolved_dependencies: {resolved_dependencies:#?}");
+    let remaining = resolved_dependencies.dependency_relations
+        .iter()
+        .filter(|dep| {
+            let target = dep.finalized.resolved_target_path();
+            let is_emitted = resolved_dependencies.emitted_files.contains(&target);
+            let is_html_file = target.extension() == Some("html".as_ref());
+            !is_emitted && !is_html_file
+        })
+        .map(|dep| {
+            let source_path = dep.original.as_file_dependency().resolved_target_path();
+            let public_path = dep.finalized.resolved_target_path();
+            FileInput {
+                source: source_path,
+                public: Some(public_path),
+            }
+        })
+        .map(|x| x.cleaned())
+        .collect::<HashSet<_>>();
+    // println!("remaining: {remaining:#?}");
+    let (css_files, remaining) = remaining
+        .into_iter()
+        .partition::<Vec<_>, _>(|x| {
+            x.source.extension() == Some("css".as_ref())
+        });
+    // println!("css_files: {css_files:#?}");
+    compile_css(&css_files, &compiler_pipeline.inputs.project);
+    // println!("remaining: {remaining:#?}");
+    emit_assets(&remaining, &compiler_pipeline.inputs.project);
 }
 
 fn compile_css(css_files: &[FileInput], project_context: &ProjectContext) {

@@ -14,7 +14,7 @@ use xml_ast::Node;
 pub use post::PostProcessor;
 pub use pre::{PreProcessError, PreProcessor};
 
-use crate::system::{CompilerFeatureset, CompilerRuntime};
+use web_compiler_types::{CompilerFeatureset, CompilerRuntime};
 
 #[derive(Clone)]
 pub struct GlobalPipelineSpec {

@@ -3,7 +3,7 @@ use macro_types::environment::MacroIO;
 use macro_types::scope::BinderValue;
 use xml_ast::{Fragment, Node};
 
-use crate::system::CompilerRuntime;
+use web_compiler_types::CompilerRuntime;
 
 use super::super::pre::PreProcessor;
 

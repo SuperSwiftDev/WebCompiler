@@ -2,7 +2,7 @@ use macro_types::macro_tag::MacroTag;
 use macro_types::environment::MacroIO;
 use xml_ast::Node;
 
-use crate::system::CompilerRuntime;
+use web_compiler_types::CompilerRuntime;
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct ContentMacroTag;

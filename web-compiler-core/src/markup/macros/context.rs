@@ -1,7 +1,7 @@
 use macro_types::macro_tag::MacroTag;
 use macro_types::environment::MacroIO;
 
-use crate::system::CompilerRuntime;
+use web_compiler_types::CompilerRuntime;
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct ContextMacroTag;

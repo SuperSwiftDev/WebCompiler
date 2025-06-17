@@ -8,7 +8,7 @@ use macro_types::environment::{AccumulatedEffects, SourceHostRef, SourcePathReso
 use macro_types::helpers::srcset::SrcsetCandidate;
 use macro_types::project::{DependencyRelation, FileDependency, ResolvedDependencies, ResolvedDependencyRelation};
 
-use crate::system::CompilerRuntime;
+use web_compiler_types::CompilerRuntime;
 
 // ————————————————————————————————————————————————————————————————————————————
 // CONSTANTS

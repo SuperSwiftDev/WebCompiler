@@ -4,7 +4,7 @@ use macro_types::project::FileInput;
 use macro_types::scope::{BinderValue, JsonBinderValue};
 use xml_ast::Node;
 
-use crate::system::CompilerRuntime;
+use web_compiler_types::CompilerRuntime;
 
 use super::super::pre::{PreProcessError, PreProcessor};
 

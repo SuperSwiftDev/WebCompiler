@@ -2176,21 +2176,7 @@ dependencies = [
  "web-compiler-core",
  "web-compiler-io-types",
  "web-compiler-macro-types",
- "web-compiler-xml-ast",
-]
-
-[[package]]
-name = "web-compiler-base"
-version = "0.1.0"
-dependencies = [
- "glob",
- "itertools 0.14.0",
- "once_cell",
- "path-clean",
- "pathdiff",
- "web-compiler-css",
- "web-compiler-io-types",
- "web-compiler-macro-types",
+ "web-compiler-types",
  "web-compiler-xml-ast",
 ]
 
@@ -2206,6 +2192,7 @@ dependencies = [
  "web-compiler-css",
  "web-compiler-io-types",
  "web-compiler-macro-types",
+ "web-compiler-types",
  "web-compiler-xml-ast",
 ]
 
@@ -2241,6 +2228,14 @@ dependencies = [
  "markup5ever_rcdom",
  "tendril",
  "xml5ever",
+]
+
+[[package]]
+name = "web-compiler-types"
+version = "0.1.0"
+dependencies = [
+ "web-compiler-io-types",
+ "web-compiler-macro-types",
 ]
 
 [[package]]

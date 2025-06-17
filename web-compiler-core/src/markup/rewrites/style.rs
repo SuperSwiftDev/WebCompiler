@@ -5,7 +5,7 @@ use xml_ast::{Element, Fragment, Node};
 
 use css::{CssPostprocessor, CssPreprocessor};
 
-use crate::system::CompilerRuntime;
+use web_compiler_types::CompilerRuntime;
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct StyleMacroTag;

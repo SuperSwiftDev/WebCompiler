@@ -6,7 +6,7 @@ use macro_types::macro_tag::MacroTagSet;
 use macro_types::project::FileInput;
 use xml_ast::{transform::{EffectfulMarkupTransformer, ProcessMode}, AttributeMap, Element, Fragment, Node, TagBuf};
 
-use crate::system::CompilerRuntime;
+use web_compiler_types::CompilerRuntime;
 
 pub struct PreProcessor {
     pub runtime: CompilerRuntime,

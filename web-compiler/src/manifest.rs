@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use serde::{Deserialize, Serialize};
-use web_compiler_core::system::{CompilerFeatureset, CompilerInputRule, CompilerInputs, CompilerPipeline};
+use web_compiler_types::{CompilerFeatureset, CompilerInputRule, CompilerInputs, CompilerPipeline};
 use web_compiler_macro_types::project::{FileInput, ProjectContext};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

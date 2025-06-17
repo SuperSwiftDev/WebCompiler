@@ -18,7 +18,7 @@ pub use inject::*;
 
 use macro_types::macro_tag::{MacroTag, MacroTagSet};
 
-use crate::system::CompilerRuntime;
+use web_compiler_types::CompilerRuntime;
 
 pub fn standard_macro_tags() -> Vec<Rc<dyn MacroTag<Runtime = CompilerRuntime>>> {
     vec![

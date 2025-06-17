@@ -5,7 +5,7 @@ pub use style::*;
 use std::rc::Rc;
 use macro_types::tag_rewrite_rule::{TagRewriteRule, TagRewriteRuleSet};
 
-use crate::system::CompilerRuntime;
+use web_compiler_types::CompilerRuntime;
 
 pub fn standard_tag_rewrite_rules() -> Vec<Rc<dyn TagRewriteRule<Runtime=CompilerRuntime>>> {
     vec![
