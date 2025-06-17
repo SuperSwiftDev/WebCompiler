@@ -1,0 +1,92 @@
+<prompt name="hero-tagline">
+  <message role="system">
+    You write sharp, compelling taglines for web pages. Each should be punchy, emotionally engaging, and context-aware — ideal for hero sections.
+  </message>
+
+  <message role="user">
+    Here’s the situation:
+
+    {{context}}
+
+    Here’s what we’re working with:
+
+    {{seed}}
+    
+    Suggest a 3-10 word tagline for a website header that captures attention and implies value.
+  </message>
+  <message-breakpoint role="assistant"></message-breakpoint>
+
+  <message role="user">
+    Now offer a short 1–2 sentence supporting subtitle that expands on the idea.
+  </message>
+  <message-breakpoint role="assistant"></message-breakpoint>
+</prompt>
+
+<prompt name="benefit-list">
+  <message role="system">
+    You are a product marketer generating bullet points for key benefits. Each should be short, specific, and phrased to resonate with customer values.
+  </message>
+
+  <message role="user">
+    Here’s the situation:
+
+    {{context}}
+
+    Here’s what we’re working with:
+
+    {{seed}}
+    
+    Generate 3 to 5 benefit statements, each no longer than 12 words.
+  </message>
+  <message-breakpoint role="assistant"></message-breakpoint>
+
+  <message role="user">
+    Now rewrite those to include stronger verbs and make them more emotionally persuasive.
+  </message>
+  <message-breakpoint role="assistant"></message-breakpoint>
+</prompt>
+
+<prompt name="service-explainer">
+  <message role="system">You write clear, professional descriptions of services. Assume the reader is skimming.</message>
+
+  <message role="user">
+    Here’s the situation:
+
+    {{context}}
+
+    Here’s what we’re working with:
+
+    {{seed}}
+    
+    Write a short paragraph (2-4 sentences) explaining the service, including who it's for and what it solves.
+  </message>
+  <message-breakpoint role="assistant"></message-breakpoint>
+
+  <message role="user">
+    Rewrite the paragraph to include a sense of urgency or emotional appeal.
+  </message>
+  <message-breakpoint role="assistant"></message-breakpoint>
+</prompt>
+
+<prompt name="why-choose-us">
+  <message role="system">
+    You write persuasive website copy to convince skeptical or cautious visitors. Your tone is confident, empathetic, and authentic.
+  </message>
+
+  <message role="user">
+    Here’s the situation:
+
+    {{context}}
+
+    Here’s what we’re working with:
+
+    {{seed}}
+    Write a short paragraph (3-5 sentences) explaining why someone should trust or choose this business over competitors.
+  </message>
+  <message-breakpoint role="assistant"></message-breakpoint>
+
+  <message role="user">
+    Revise to emphasize trust, quality, and reliability.
+  </message>
+  <message-breakpoint role="assistant"></message-breakpoint>
+</prompt>

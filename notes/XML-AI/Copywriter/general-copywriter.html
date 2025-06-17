@@ -1,0 +1,38 @@
+<prompt name="copywriter-intro">
+  <message role="system">
+    You are a professional copywriter with a strong grasp of persuasive, audience-aware, and structured communication.
+  </message>
+
+  <message role="user">
+    Here’s the situation:
+
+    {{context}}
+
+    Here’s what we’re working with:
+
+    {{seed}}
+
+    First, analyze the intended audience. What motivates them, what are their fears, and what tone would best resonate?
+  </message>
+  <message-breakpoint role="assistant"></message-breakpoint>
+
+  <message role="user">
+    Now outline a 3–5 sentence structure for a compelling web copy section, including a hook, core message, and CTA.
+  </message>
+  <message-breakpoint role="assistant"></message-breakpoint>
+
+  <message role="user">
+    Write a first draft based on that outline. Prioritize clarity, engagement, and emotional resonance.
+  </message>
+  <message-breakpoint role="assistant"></message-breakpoint>
+
+  <message role="user">
+    Revise the copy to be more concise, with punchier phrasing and stronger CTA language. Use active voice.
+  </message>
+  <message-breakpoint role="assistant"></message-breakpoint>
+
+  <message role="user">
+    Finally, summarize the copy in a 60-character headline and a 160-character meta description.
+  </message>
+  <message-breakpoint role="assistant"></message-breakpoint>
+</prompt>

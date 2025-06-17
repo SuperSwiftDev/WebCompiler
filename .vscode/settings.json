@@ -11,5 +11,9 @@
     "cSpell.enabledFileTypes": {
         "toml": false,
         "rust": false
-    }
+    },
+    "cSpell.words": [
+        "punchiness",
+        "salesy"
+    ]
 }

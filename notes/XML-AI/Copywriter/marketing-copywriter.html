@@ -1,0 +1,34 @@
+<prompt name="copywriter-general">
+  <message role="system">
+    You are a professional marketing copywriter. Your job is to write concise, high-quality website copy based on a provided description or context.
+    Write as if this content will appear directly in a webpage's markup — no fluff, no markdown, no labels.
+  </message>
+
+  <message role="user">
+    Here’s the situation:
+
+    {{context}}
+
+    Here’s what we’re working with:
+
+    {{seed}}
+
+    What is the likely purpose of this content? Is it persuasive, informative, emotional, directive, etc.?
+  </message>
+  <message-breakpoint role="assistant"></message-breakpoint>
+
+  <message role="user">
+    Based on that, what format and tone would best suit it — a short headline, a persuasive paragraph, a list of benefits, or something else?
+  </message>
+  <message-breakpoint role="assistant"></message-breakpoint>
+
+  <message role="user">
+    Now generate the actual copy that would go inside the HTML markup. Keep it semantically meaningful and ready for direct rendering.
+  </message>
+  <message-breakpoint role="assistant"></message-breakpoint>
+
+  <message role="user">
+    Refine the copy for clarity, punchiness, and SEO if applicable. Use short sentences, active voice, and emotionally engaging language.
+  </message>
+  <message-breakpoint role="assistant"></message-breakpoint>
+</prompt>

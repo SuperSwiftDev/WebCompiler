@@ -519,7 +519,7 @@ impl Document {
         }
         Ok(Self { items })
     }
-    fn from_node(node: xml_ast::Node) -> Result<Self, DslFormatErrorList> {
+    pub fn from_node(node: xml_ast::Node) -> Result<Self, DslFormatErrorList> {
         match node {
             xml_ast::Node::Element(x) => Ok(Self { items: vec![
                 DocumentItem::from_element(x)?
@@ -548,38 +548,11 @@ impl DslFormatError for InvalidDocument {
 // LOAD
 // ————————————————————————————————————————————————————————————————————————————
 
-pub fn parse_load(source: impl AsRef<str>) -> Result<Document, DslFormatErrorList> {
-    let xml_ast::ParserPayload {output, errors} = xml_ast::parse_fragment_str(source);
-    if !errors.is_empty() {
-        return Err(DslFormatErrorList::new(Rc::new(ParserErrors { errors })))
-    }
-    Document::from_node(output)
-}
+// pub fn parse_load(source: impl AsRef<str>) -> Result<Document, DslFormatErrorList> {
+//     let xml_ast::ParserPayload {output, errors} = xml_ast::parse_fragment_str(source);
+//     if !errors.is_empty() {
+//         return Err(DslFormatErrorList::new(Rc::new(ParserErrors { errors })))
+//     }
+//     Document::from_node(output)
+// }
 
-#[derive(Debug, Clone)]
-pub struct ParserErrors {
-    errors: Vec<String>,
-}
-
-impl ParserErrors {
-    pub fn joined(&self, separator: impl AsRef<str>) -> String {
-        self.errors
-            .iter()
-            .map(|x| format!("{x}"))
-            .collect::<Vec<_>>()
-            .join(separator.as_ref())
-    }
-}
-
-impl std::fmt::Display for ParserErrors {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let items = self.joined(" ∙ ");
-        write!(f, "[parser errors] {items}")
-    }
-}
-
-impl std::error::Error for ParserErrors {}
-
-impl DslFormatError for ParserErrors {
-    fn singleton(&self) -> DslFormatErrorList { DslFormatErrorList::new(Rc::new(self.clone())) }
-}
