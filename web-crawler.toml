@@ -2,13 +2,13 @@
 id = "rsseau_en"
 seed_url = "https://rsseau.fr/en/"
 output_dir = ".web-crawler/output/rsseau-en"
-whitelist.domains = ["https://rsseau.fr/en/"]
+whitelist.domains = ["rsseau.fr"]
 blacklist.protocols = ["tel"]
 
 [[projects]]
 id = "spider_cloud"
 seed_url = "https://spider.cloud"
 output_dir = ".web-crawler/output/spider-cloud"
-whitelist.domains = ["https://spider.cloud"]
+whitelist.domains = ["spider.cloud"]
 blacklist.protocols = ["tel"]
 
