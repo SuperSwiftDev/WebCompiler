@@ -80,6 +80,21 @@ impl RelativeFileUrl {
     pub fn to_file_url(&self) -> String {
         format!("file://./{}", self.0.to_string_lossy())
     }
+
+    pub fn resolve_full_snapshot_path(&self, project_context: &ProjectContext) -> PathBuf {
+        project_context.output_dir.join(&self.0)
+    }
+    pub fn resolve_full_sub_snapshot_path_for(&self, project_context: &ProjectContext, name: &str) -> PathBuf {
+        let snapshot = self.resolve_full_snapshot_path(project_context);
+        let snapshot_parent = snapshot.parent().unwrap();
+        let snapshot_ext = snapshot.extension().unwrap().to_str().unwrap();
+        let snapshot_file_stem = snapshot.file_stem().unwrap().to_str().unwrap();
+        let cleaned_file_name = format!("{snapshot_file_stem}.{name}.{snapshot_ext}");
+        snapshot_parent.join(cleaned_file_name)
+    }
+    pub fn file_exists(&self, project_context: &ProjectContext) -> bool {
+        self.resolve_full_snapshot_path(project_context).exists()
+    }
 }
 
 impl Serialize for RelativeFileUrl {
@@ -104,6 +119,16 @@ impl<'de> Deserialize<'de> for RelativeFileUrl {
     }
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum FailedUrlError {
+    HttpError {
+        status: Option<i64>,
+    },
+    InternalFileExists {
+        conflicting_file: RelativeFileUrl,
+    },
+}
+
 // ————————————————————————————————————————————————————————————————————————————
 // DATABASE
 // ————————————————————————————————————————————————————————————————————————————
@@ -111,6 +136,7 @@ impl<'de> Deserialize<'de> for RelativeFileUrl {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct Database {
     pub entries: BTreeMap<CanonicalUrlString, PageEntry>,
+    pub failed_urls: BTreeMap<OriginalUrlString, FailedUrlError>,
 }
 
 impl Database {
@@ -137,6 +163,12 @@ impl Database {
     pub fn lookup(&self, canonical_url: &CanonicalUrlString) -> Option<&PageEntry> {
         self.entries.get(canonical_url)
     }
+    pub fn add_failed_url(&mut self, key: OriginalUrlString, value: FailedUrlError) {
+        let _ = self.failed_urls.insert(key, value);
+    }
+    pub fn has_failed_url(&mut self, key: &OriginalUrlString) -> bool {
+        self.failed_urls.contains_key(key)
+    }
 }
 
 // ————————————————————————————————————————————————————————————————————————————
@@ -145,6 +177,7 @@ impl Database {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PageEntry {
+    pub http_status: Option<i64>,
     pub original_url: OriginalUrlString,
     pub canonical_url: CanonicalUrlString,
     /// Relative to the output directory.
@@ -155,17 +188,6 @@ pub struct PageEntry {
 }
 
 impl PageEntry {
-    pub fn resolve_full_snapshot_path(&self, project_context: &ProjectContext) -> PathBuf {
-        project_context.output_dir.join(&self.local_shanpshot_path_rel.0)
-    }
-    pub fn resolve_full_sub_snapshot_path_for(&self, project_context: &ProjectContext, name: &str) -> PathBuf {
-        let snapshot = self.resolve_full_snapshot_path(project_context);
-        let snapshot_parent = snapshot.parent().unwrap();
-        let snapshot_ext = snapshot.extension().unwrap().to_str().unwrap();
-        let snapshot_file_stem = snapshot.file_stem().unwrap().to_str().unwrap();
-        let cleaned_file_name = format!("{snapshot_file_stem}.{name}.{snapshot_ext}");
-        snapshot_parent.join(cleaned_file_name)
-    }
     pub fn builder() -> PageEntryBuilder {
         PageEntryBuilder::default()
     }
@@ -173,6 +195,7 @@ impl PageEntry {
 
 #[derive(Debug, Clone, Default)]
 pub struct PageEntryBuilder {
+    pub http_status: Option<i64>,
     pub original_url: Option<OriginalUrlString>,
     pub canonical_url: Option<CanonicalUrlString>,
     /// Relative to the output directory.
@@ -183,6 +206,10 @@ pub struct PageEntryBuilder {
 }
 
 impl PageEntryBuilder {
+    pub fn with_http_status(mut self, http_status: Option<i64>) -> Self {
+        self.http_status = http_status;
+        self
+    }
     pub fn with_original_url(mut self, original_url: OriginalUrlString) -> Self {
         self.original_url = Some(original_url);
         self
@@ -209,6 +236,7 @@ impl PageEntryBuilder {
     }
     pub fn build(self) -> Option<PageEntry> {
         Some(PageEntry {
+            http_status: self.http_status,
             original_url: self.original_url?,
             canonical_url: self.canonical_url?,
             local_shanpshot_path_rel: self.local_shanpshot_path_rel?,
@@ -226,6 +254,9 @@ impl PageEntryBuilder {
 const MAX_SEGMENT_LEN: usize = 100;
 const MAX_PATH_LEN: usize = 240;
 
+// const MAX_SEGMENT_LEN: usize = 64;
+// const MAX_PATH_LEN: usize = 255;
+
 /// Build relative file path for a given URL.
 /// Regarding the parent directory — falls back to hashed folder if path becomes too long or unsafe.
 pub fn build_rel_html_snapshot_file_path(url: &str) -> Option<RelativeFileUrl> {
@@ -233,28 +264,28 @@ pub fn build_rel_html_snapshot_file_path(url: &str) -> Option<RelativeFileUrl> {
         base.join("snapshot.html")
     })?))
 }
-
-/// Build directory path for a given URL.
+/// Build directory path for a given URL, including query parameters.
 /// Falls back to hashed folder if path becomes too long or unsafe.
 pub fn build_rel_html_snapshot_dir(url: &str) -> Option<PathBuf> {
+    use sha2::{Digest, Sha256};
+
     fn sanitize(s: &str) -> String {
         s.chars()
             .map(|c| if c.is_ascii_alphanumeric() || c == '-' { c } else { '_' })
             .collect()
     }
+
     fn short_hash(s: &str) -> String {
-        use sha2::{Digest, Sha256};
         let mut hasher = Sha256::new();
         hasher.update(s.as_bytes());
         let hash = hasher.finalize();
-
         let short = hash[..4]
             .iter()
             .map(|b| format!("{:02x}", b))
             .collect::<String>();
-
         format!("h{short}")
     }
+
     let parsed = Url::parse(url).ok()?;
     let host = parsed.host_str().unwrap_or("unknown");
 
@@ -263,24 +294,89 @@ pub fn build_rel_html_snapshot_dir(url: &str) -> Option<PathBuf> {
         path = "index".to_string();
     }
 
+    let query = parsed.query().unwrap_or("");
+    let query_suffix = if !query.is_empty() {
+        let sanitized_query = sanitize(query);
+        format!("~q~{sanitized_query}")
+    } else {
+        String::new()
+    };
+
     let mut full_path = PathBuf::from(host);
     let mut total_len = host.len();
 
-    let segments: Vec<String> = path
+    let mut segments: Vec<String> = path
         .split('/')
         .map(sanitize)
         .collect();
 
+    // Append sanitized query to the last segment
+    if !query_suffix.is_empty() {
+        if let Some(last) = segments.last_mut() {
+            last.push_str(&query_suffix);
+        }
+    }
+
     for seg in &segments {
         total_len += seg.len() + 1;
-
         if seg.len() > MAX_SEGMENT_LEN || total_len > MAX_PATH_LEN {
             let hashed = short_hash(url);
             return Some(PathBuf::from(host).join("long").join(hashed));
         }
-
         full_path = full_path.join(seg);
     }
 
     Some(full_path)
 }
+
+
+// /// Build directory path for a given URL.
+// /// Falls back to hashed folder if path becomes too long or unsafe.
+// pub fn build_rel_html_snapshot_dir(url: &str) -> Option<PathBuf> {
+//     fn sanitize(s: &str) -> String {
+//         s.chars()
+//             .map(|c| if c.is_ascii_alphanumeric() || c == '-' { c } else { '_' })
+//             .collect()
+//     }
+//     fn short_hash(s: &str) -> String {
+//         use sha2::{Digest, Sha256};
+//         let mut hasher = Sha256::new();
+//         hasher.update(s.as_bytes());
+//         let hash = hasher.finalize();
+
+//         let short = hash[..4]
+//             .iter()
+//             .map(|b| format!("{:02x}", b))
+//             .collect::<String>();
+
+//         format!("h{short}")
+//     }
+//     let parsed = Url::parse(url).ok()?;
+//     let host = parsed.host_str().unwrap_or("unknown");
+
+//     let mut path = parsed.path().trim_matches('/').to_string();
+//     if path.is_empty() {
+//         path = "index".to_string();
+//     }
+
+//     let mut full_path = PathBuf::from(host);
+//     let mut total_len = host.len();
+
+//     let segments: Vec<String> = path
+//         .split('/')
+//         .map(sanitize)
+//         .collect();
+
+//     for seg in &segments {
+//         total_len += seg.len() + 1;
+
+//         if seg.len() > MAX_SEGMENT_LEN || total_len > MAX_PATH_LEN {
+//             let hashed = short_hash(url);
+//             return Some(PathBuf::from(host).join("long").join(hashed));
+//         }
+
+//         full_path = full_path.join(seg);
+//     }
+
+//     Some(full_path)
+// }

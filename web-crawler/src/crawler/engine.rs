@@ -4,7 +4,7 @@ use std::str::FromStr;
 use url::Url;
 use web_client_bot::WebClient;
 
-use crate::crawler::db::{CanonicalUrlString, OriginalUrlString, PageEntry};
+use crate::crawler::db::{CanonicalUrlString, FailedUrlError, OriginalUrlString, PageEntry};
 use crate::crawler::db::Database;
 use crate::crawler::db::ProjectContext;
 
@@ -122,27 +122,57 @@ impl<'a> Context<'a> {
         queue: &mut VecDeque<CrawlTask>,
         filter_settings: &FilterSettings,
     ) {
+        let local_shanpshot_path_rel = super::db::build_rel_html_snapshot_file_path(task.url.as_str()).unwrap();
         let canonical_url = task.canonicalize_url();
         let canonical_url_string = CanonicalUrlString(canonical_url.to_string());
+        // - CHECK & SKIP EARLY -
         if let Some(entry) = self.database.lookup(&canonical_url_string) {
-            let snapshot_path = entry.resolve_full_snapshot_path(self.project_context);
+            let snapshot_path = entry.local_shanpshot_path_rel.resolve_full_snapshot_path(self.project_context);
             if snapshot_path.exists() {
                 return
             }
         }
+        // - CHECK OUTPUT FILE PATH -
+        {
+            let snapshot_file = local_shanpshot_path_rel.resolve_full_snapshot_path(self.project_context);
+            if snapshot_file.exists() {
+                eprintln!("ⓘ Skipping {:?} : SNAPSHOT FILE EXISTS", task.url.to_string());
+                return
+            }
+        }
+        // - CHECK IF ALREADY TRIED -
+        if self.database.has_failed_url(&OriginalUrlString(task.url.to_string())) {
+            return
+        }
+
+        // - PROCEED -
 
         // - LOG -
         eprintln!("🔎 Visiting: {}", canonical_url);
 
         // - -
-        let tab = self.client.open_new_tab_at_url(canonical_url.as_str()).await;
+        // let tab = self.client.open_new_tab_at_url(canonical_url.as_str()).await;
+        let tab = self.client.open_new_tab_at_url_with_network_tracking(canonical_url.as_str()).await;
+        let status_code = tab.status_code();
+
+        if status_code != Some(200) {
+            eprintln!("❌ Skipping {:?} : Request failed STATUS={status_code:?}", task.url.to_string());
+            self.database.add_failed_url(OriginalUrlString(task.url.to_string()), FailedUrlError::HttpError {
+                // url: OriginalUrlString(task.url.to_string()),
+                status: status_code,
+            });
+            tab.close().await;
+            return
+        }
+
 
         tab.wait_for_navigation().await;
         
         match tab.is_text_html_document().await {
             Ok(true) => (),
             _ => {
-                eprintln!("ⓘ Skipping {:?}: NOT HTML DOCUMENT", task.url.to_string());
+                eprintln!("ⓘ Skipping {:?} : NOT HTML DOCUMENT", task.url.to_string());
+                tab.close().await;
                 return
             }
         };
@@ -150,6 +180,7 @@ impl<'a> Context<'a> {
         // - -
         if let Err(e) = tab.wait_until_fully_settled().await {
             eprintln!("❌ Failed to settle: {} | {e}", canonical_url.as_str());
+            tab.close().await;
             return
         }
 
@@ -192,11 +223,10 @@ impl<'a> Context<'a> {
 
         // - FINALIZE -
         let page_entry = PageEntry::builder()
+            .with_http_status(status_code)
             .with_original_url(task.url.clone().into())
             .with_canonical_url(canonical_url_string)
-            .with_local_shanpshot_path_rel(
-                super::db::build_rel_html_snapshot_file_path(task.url.as_str()).unwrap()
-            )
+            .with_local_shanpshot_path_rel(local_shanpshot_path_rel.clone())
             .with_local_shanpshot_date(
                 crate::crawler::db::ShanpshotDate::new_now()
             )
@@ -206,10 +236,23 @@ impl<'a> Context<'a> {
             .unwrap();
 
         // - RAW -
-        let snapshot_path = page_entry.resolve_full_snapshot_path(self.project_context);
-
-        std::fs::create_dir_all(snapshot_path.parent().unwrap()).unwrap();
-        std::fs::write(snapshot_path, &html).unwrap();
+        {
+            let snapshot_path = local_shanpshot_path_rel.resolve_full_snapshot_path(self.project_context);
+            if snapshot_path.exists() {
+                eprintln!("❌ Skipping task {:?} : file exists {snapshot_path:?}", task.url.to_string());
+                self.database.add_failed_url(
+                    OriginalUrlString(task.url.to_string()),
+                    // FailedUrlError::InternalFileExists(OriginalUrlString(task.url.to_string()))
+                    FailedUrlError::InternalFileExists {
+                        conflicting_file: local_shanpshot_path_rel.clone(),
+                    }
+                );
+                tab.close().await;
+                return
+            }
+            std::fs::create_dir_all(snapshot_path.parent().unwrap()).unwrap();
+            std::fs::write(snapshot_path, &html).unwrap();
+        }
         
         // - INGESTED -
         {
@@ -220,7 +263,7 @@ impl<'a> Context<'a> {
                 let html = html.format_document_pretty();
                 html
             };
-            let ingested_path = page_entry.resolve_full_sub_snapshot_path_for(self.project_context, name);
+            let ingested_path = local_shanpshot_path_rel.resolve_full_sub_snapshot_path_for(self.project_context, name);
             std::fs::create_dir_all(ingested_path.parent().unwrap()).unwrap();
             std::fs::write(ingested_path, ingested_html).unwrap();
         }
@@ -232,7 +275,7 @@ impl<'a> Context<'a> {
                 let html = html.format_document_pretty();
                 html
             };
-            let ingested_path = page_entry.resolve_full_sub_snapshot_path_for(self.project_context, name);
+            let ingested_path = local_shanpshot_path_rel.resolve_full_sub_snapshot_path_for(self.project_context, name);
             std::fs::create_dir_all(ingested_path.parent().unwrap()).unwrap();
             std::fs::write(ingested_path, ingested_html).unwrap();
         }
@@ -244,7 +287,7 @@ impl<'a> Context<'a> {
                 // let html = html.format_document_pretty();
                 html
             };
-            let ingested_path = page_entry.resolve_full_sub_snapshot_path_for(self.project_context, name).with_extension("txt");
+            let ingested_path = local_shanpshot_path_rel.resolve_full_sub_snapshot_path_for(self.project_context, name).with_extension("txt");
             std::fs::create_dir_all(ingested_path.parent().unwrap()).unwrap();
             std::fs::write(ingested_path, ingested_html).unwrap();
         }
@@ -253,7 +296,7 @@ impl<'a> Context<'a> {
             let html = crate::processor::passes::parse(&html);
             if let Some(metadata) = crate::processor::metadata::compile_report(&html) {
                 let metadata = serde_json::to_string_pretty(&metadata).unwrap();
-                let ingested_path = page_entry.resolve_full_sub_snapshot_path_for(self.project_context, name).with_extension("json");
+                let ingested_path = page_entry.local_shanpshot_path_rel.resolve_full_sub_snapshot_path_for(self.project_context, name).with_extension("json");
                 std::fs::create_dir_all(ingested_path.parent().unwrap()).unwrap();
                 std::fs::write(ingested_path, metadata).unwrap();
             }
@@ -302,7 +345,7 @@ impl CrawlTask {
         let canonical_url = self.canonicalize_url();
         let canonical_url_string = CanonicalUrlString(canonical_url.to_string());
         if let Some(entry) = context.database.lookup(&canonical_url_string) {
-            let snapshot_path = entry.resolve_full_snapshot_path(context.project_context);
+            let snapshot_path = entry.local_shanpshot_path_rel.resolve_full_snapshot_path(context.project_context);
             if snapshot_path.exists() {
                 return true
             }
