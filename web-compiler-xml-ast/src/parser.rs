@@ -71,3 +71,22 @@ pub struct ParserPayload<Output> {
     pub output: Output,
     pub errors: Vec<String>,
 }
+
+impl<T> ParserPayload<T> {
+    pub fn log_errors(&self) {
+        for error in self.errors.iter() {
+            eprintln!("⚠️ {error}")
+        }
+    }
+    pub fn unwrap(self) -> T {
+        if !self.errors.is_empty() {
+            self.log_errors();
+        }
+        let ParserPayload { output, errors } = self;
+        let mut result = Some(output);
+        if !errors.is_empty() {
+            result = None;
+        }
+        return result.unwrap()
+    }
+}

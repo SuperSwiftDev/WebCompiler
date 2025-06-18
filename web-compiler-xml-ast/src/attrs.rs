@@ -314,6 +314,12 @@ impl Debug for AttributeValueBuf {
     }
 }
 
+impl Display for AttributeValueBuf {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.as_str())
+    }
+}
+
 // ————————————————————————————————————————————————————————————————————————————
 // ATTRIBUTE MAP
 // ————————————————————————————————————————————————————————————————————————————
@@ -405,6 +411,16 @@ impl AttributeMap {
 
     pub fn contains_key<Q: AsRef<str>>(&self, key: Q) -> bool {
         self.0.contains_key(AttributeKeyStr::from_str(key.as_ref()))
+    }
+
+    pub fn contains_key_value(&self, key: impl AsRef<str>, value: impl AsRef<str>) -> bool {
+        let target_key = AttributeKeyStr::from_str(key.as_ref());
+        if let Some(result) = self.0.get(target_key) {
+            if result.as_str() == value.as_ref() {
+                return true
+            }
+        }
+        false
     }
 
     pub fn clear(&mut self) {

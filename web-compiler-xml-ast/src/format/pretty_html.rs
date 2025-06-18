@@ -23,16 +23,37 @@ impl std::error::Error for HtmlPrettifyError {}
 
 /// Prettifies HTML using the `tidy` CLI tool.
 pub fn prettify_html(html: &str) -> Result<String, HtmlPrettifyError> {
+    // let mut child = Command::new("tidy")
+    //     .args(&[
+    //         "-quiet",          // suppress warnings
+    //         "--show-warnings",
+    //         "no",
+    //         "-indent",         // pretty print
+    //         "-wrap", "120",    // wrap lines at 120 chars
+    //         "--tidy-mark", "no", // do not insert the generator meta tag
+    //         "-as-html",        // treat input as HTML
+    //         "-utf8",           // set output encoding
+    //     ])
+    //     .stdin(Stdio::piped())
+    //     .stdout(Stdio::piped())
+    //     .stderr(Stdio::null()) // ignore stderr unless debugging
+    //     .spawn()
+    //     .map_err(|e| {
+    //         eprintln!("WARNING: {e}");
+    //         HtmlPrettifyError::TidyNotInstalled
+    //     })?;
+
     let mut child = Command::new("tidy")
         .args(&[
-            "-quiet",          // suppress warnings
-            "--show-warnings",
-            "no",
-            "-indent",         // pretty print
-            "-wrap", "120",    // wrap lines at 120 chars
-            "--tidy-mark", "no", // do not insert the generator meta tag
-            "-as-html",        // treat input as HTML
-            "-utf8",           // set output encoding
+            "-quiet",                    // suppress non-critical output
+            "--show-warnings", "no",    // don't show warnings
+            "-indent",                  // pretty print
+            "-wrap", "120",             // wrap lines at 120 chars
+            "--tidy-mark", "no",        // do not insert generator meta tag
+            "-as-html",                 // treat input as HTML (not XHTML)
+            "-utf8",                    // UTF-8 output
+            "--custom-tags", "blocklevel", // treat custom tags like <wow-image> as valid
+            "--drop-empty-elements", "no", // preserve empty tags
         ])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())

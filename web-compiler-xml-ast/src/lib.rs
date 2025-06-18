@@ -15,4 +15,6 @@ pub mod transform;
 pub mod traversal;
 pub mod format;
 pub mod constants;
+pub mod query;
+
 

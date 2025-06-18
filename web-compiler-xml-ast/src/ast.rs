@@ -78,6 +78,13 @@ impl Node {
             Node::Text(x) => Ok(vec![x]),
         }
     }
+    pub fn flatten(self) -> Vec<Node> {
+        match self {
+            Self::Text(text) => vec![Self::Text(text)],
+            Self::Element(element) => vec![Self::Element(element)],
+            Self::Fragment(fragment) => fragment.flatten(),
+        }
+    }
 }
 
 impl Debug for Node {
@@ -183,6 +190,15 @@ impl Fragment {
             }
         }
         Ok(results)
+    }
+    pub fn flatten(self) -> Vec<Node> {
+        self
+            .to_vec()
+            .into_iter()
+            .flat_map(|node| {
+                node.flatten()
+            })
+            .collect::<Vec<_>>()
     }
 }
 

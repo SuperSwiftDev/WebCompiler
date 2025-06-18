@@ -57,3 +57,6 @@ out-old/
 
 .web-compiler
 .ai-xml
+.web-crawler
+
+web-crawler.private.toml
