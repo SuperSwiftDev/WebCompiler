@@ -16,8 +16,15 @@ pub struct FilterSettings {
 }
 
 impl FilterSettings {
-    pub fn with_whitelisted_domain(mut self, entry: impl Into<String>) -> Self {
-        self.domain_whitelist.insert(entry.into());
+    pub fn with_whitelisted_domain(mut self, entry: impl AsRef<str>) -> Self {
+        match Url::from_str(entry.as_ref()) {
+            Ok(url) => {
+                self.domain_whitelist.insert(url.domain().unwrap().to_string());
+            }
+            Err(_) => {
+                self.domain_whitelist.insert(entry.as_ref().to_string());
+            }
+        }
         self
     }
     pub fn with_whitelisted_protocol(mut self, entry: impl Into<String>) -> Self {
@@ -51,7 +58,20 @@ impl FilterSettings {
         }
         keep
     }
+    /// Check if a domain is a subdomain of any whitelisted domain
+    pub fn is_subdomain_of_whitelisted(&self, url: &Url) -> bool {
+        let url_domain = match url.domain() {
+            Some(d) => d.to_ascii_lowercase(),
+            None => return false,
+        };
+    
+        self.domain_whitelist.iter().any(|allowed| {
+            let allowed = allowed.to_ascii_lowercase();
+            url_domain == allowed || url_domain.ends_with(&format!(".{}", allowed))
+        })
+    }
 }
+
 
 pub async fn process_project_spec(project: &crate::manifest::specification::ProjectSpec) {
     let mut filter_settings = FilterSettings::default();
@@ -144,6 +164,17 @@ impl<'a> Context<'a> {
         if self.database.has_failed_url(&OriginalUrlString(task.url.to_string())) {
             return
         }
+        {
+            let matches_redirect_key = self.database.redirects.keys().find(|k| {
+                *k == &OriginalUrlString(task.url.to_string())
+            }).is_some();
+            let matches_redirect_value = self.database.redirects.keys().find(|k| {
+                *k == &OriginalUrlString(task.url.to_string())
+            }).is_some();
+            if matches_redirect_key || matches_redirect_value {
+                eprintln!("ⓘ Skipping {:?} : REDIRECT MATCH", task.url.to_string());
+            }
+        }
 
         // - PROCEED -
 
@@ -184,6 +215,23 @@ impl<'a> Context<'a> {
             return
         }
 
+        // - ACTUAL-URL -
+        let actual_url = tab.actual_url().await;
+        let actual_url = Url::from_str(&actual_url).unwrap();
+        let did_redirect = actual_url != task.url;
+        if did_redirect {
+            self.database.redirects.insert(OriginalUrlString(task.url.to_string()), OriginalUrlString(actual_url.to_string()));
+        }
+
+        let task = CrawlTask::new(actual_url);
+        let local_shanpshot_path_rel = super::db::build_rel_html_snapshot_file_path(task.url.as_str()).unwrap();
+        let canonical_url = task.canonicalize_url();
+        let canonical_url_string = CanonicalUrlString(canonical_url.to_string());
+
+        // let local_shanpshot_path_rel = super::db::build_rel_html_snapshot_file_path(actual_url.as_str()).unwrap();
+        // let canonical_url = task.canonicalize_url();
+        // let canonical_url_string = CanonicalUrlString(canonical_url.to_string());
+
         // - DOM LOADED -
         let html = tab.html_content().await;
         let outgoing_anchors = tab.scrape_all_anchor_links().await;
@@ -206,7 +254,11 @@ impl<'a> Context<'a> {
                 }
             })
             .filter(|url| {
-                filter_settings.should_visit(url)
+                let should_visit = filter_settings.should_visit(url);
+                if !should_visit && filter_settings.is_subdomain_of_whitelisted(url) {
+                    self.database.skipped_locals.insert(OriginalUrlString(url.to_string()));
+                }
+                should_visit
             })
             .collect::<Vec<_>>();
         

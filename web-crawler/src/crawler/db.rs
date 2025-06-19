@@ -137,6 +137,8 @@ pub enum FailedUrlError {
 pub struct Database {
     pub entries: BTreeMap<CanonicalUrlString, PageEntry>,
     pub failed_urls: BTreeMap<OriginalUrlString, FailedUrlError>,
+    pub skipped_locals: BTreeSet<OriginalUrlString>,
+    pub redirects: BTreeMap<OriginalUrlString, OriginalUrlString>,
 }
 
 impl Database {

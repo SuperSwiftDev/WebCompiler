@@ -192,6 +192,11 @@ impl WebClientTab {
     pub fn status_code(&self) -> Option<i64> {
         self.status_code.clone()
     }
+    pub async fn actual_url(&self) -> String {
+        let actual_url = self.page.evaluate("window.location.href").await.unwrap();
+        let actual_url = actual_url.value().unwrap().as_str().unwrap_or("").to_string();
+        actual_url
+    }
 }
 
 
