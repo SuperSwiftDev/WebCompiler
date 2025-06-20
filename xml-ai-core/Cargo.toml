@@ -7,9 +7,11 @@ edition = "2024"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = { version = "1.0", features = ["preserve_order"]}
 unindent = "0.2.3"
+jsonschema = "0.30.0"
+referencing = "0.30.0"
+percent-encoding = "2.3"
 
 web-compiler-xml-ast = { path = "../web-compiler-xml-ast" }
-
 xml-ai-client = { path = "../xml-ai-client" }
 
 # web-compiler-io-types = { path = "../web-compiler-io-types" }
