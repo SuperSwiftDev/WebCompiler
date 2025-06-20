@@ -1,5 +1,5 @@
 // use macro_types::environment::MacroRuntime;
-use macro_types::environment::{LexicalEnvironment, MacroIO};
+use macro_types::environment::{ProcessScope, MacroIO};
 use macro_types::tag_rewrite_rule::TagRewriteRule;
 use xml_ast::{Element, Fragment, Node};
 
@@ -16,7 +16,7 @@ impl TagRewriteRule for StyleMacroTag {
     fn pre_process(
         &self,
         element: Element,
-        _: &mut LexicalEnvironment,
+        _: &mut ProcessScope,
         runtime: &Self::Runtime,
     ) -> MacroIO<Node> {
         let text_contents = element

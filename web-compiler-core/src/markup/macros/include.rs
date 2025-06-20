@@ -18,7 +18,7 @@ impl MacroTag for IncludeMacroTag {
         &self,
         attributes: xml_ast::AttributeMap,
         children: xml_ast::Fragment,
-        scope: &mut macro_types::environment::LexicalEnvironment,
+        scope: &mut macro_types::environment::ProcessScope,
         runtime: &Self::Runtime,
     ) -> MacroIO<xml_ast::Node> {
         let mut child_scope = scope.to_owned();
@@ -35,7 +35,13 @@ impl MacroTag for IncludeMacroTag {
                         .into_iter()
                         .filter(|(key, _)| key.as_str() != "src")
                         .map(|(key, value)| {
-                            (key.as_str().to_owned(), JsonBinderValue::json_string(value.as_str().to_owned()))
+                            let mut value = value.as_str().to_string();
+                            crate::markup::rewrites::attributes::resolve_string_expression(
+                                &mut value,
+                                scope,
+                                runtime
+                            );
+                            (key.as_str().to_owned(), JsonBinderValue::json_string(value))
                         })
                         .collect::<Vec<_>>();
                     let host_object = BinderValue::object(host_object);

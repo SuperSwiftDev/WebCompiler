@@ -15,7 +15,7 @@ impl MacroTag for BindMacroTag {
         &self,
         attributes: xml_ast::AttributeMap,
         _: xml_ast::Fragment,
-        scope: &mut macro_types::environment::LexicalEnvironment,
+        scope: &mut macro_types::environment::ProcessScope,
         runtime: &Self::Runtime,
     ) -> MacroIO<xml_ast::Node> {
         let target = attributes

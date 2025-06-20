@@ -228,7 +228,7 @@ fn resolve_dependency_relation(
 
 pub fn resolve_attribute_path_expressions(
     attributes: &mut AttributeMap,
-    scope: &mut macro_types::environment::LexicalEnvironment,
+    scope: &mut macro_types::environment::ProcessScope,
     runtime: &CompilerRuntime,
 ) {
     attributes.map_mut(|_, value| {
@@ -244,6 +244,22 @@ pub fn resolve_attribute_path_expressions(
     });
 }
 
+pub fn resolve_string_expression(
+    value: &mut String,
+    scope: &mut macro_types::environment::ProcessScope,
+    runtime: &CompilerRuntime,
+) {
+    let rewrite = ResolvedPathExpression::parse(
+        value.as_str(),
+        scope,
+        runtime
+    )
+    .and_then(|x| x.try_cast_to_string(runtime));
+    if let Some(rewrite) = rewrite {
+        *value = rewrite;
+    }
+}
+
 // ————————————————————————————————————————————————————————————————————————————
 // DSL HELPERS
 // ————————————————————————————————————————————————————————————————————————————
@@ -257,7 +273,7 @@ pub enum AttributeCommand {
 impl AttributeCommand {
     pub fn from_attributes(
         attributes: &mut AttributeMap,
-        scope: &mut macro_types::environment::LexicalEnvironment,
+        scope: &mut macro_types::environment::ProcessScope,
         runtime: &CompilerRuntime,
     ) -> Option<Self> {
         if let Some(if_control) = Self::parse_if_control_attribute(attributes, scope, runtime) {
@@ -270,7 +286,7 @@ impl AttributeCommand {
     }
     pub fn parse_if_control_attribute(
         attributes: &mut AttributeMap,
-        scope: &mut macro_types::environment::LexicalEnvironment,
+        scope: &mut macro_types::environment::ProcessScope,
         runtime: &CompilerRuntime,
     ) -> Option<Self> {
         let value = attributes.get("if")?;
@@ -284,7 +300,7 @@ impl AttributeCommand {
     }
     pub fn parse_unless_control_attribute(
         attributes: &mut AttributeMap,
-        scope: &mut macro_types::environment::LexicalEnvironment,
+        scope: &mut macro_types::environment::ProcessScope,
         runtime: &CompilerRuntime,
     ) -> Option<Self> {
         let value = attributes.get("unless")?;
@@ -323,7 +339,7 @@ struct ResolvedPathExpression<'a> {
 impl<'a> ResolvedPathExpression<'a> {
     pub fn parse(
         raw: &'a str,
-        scope: &'a mut macro_types::environment::LexicalEnvironment,
+        scope: &'a mut macro_types::environment::ProcessScope,
         runtime: &'a CompilerRuntime,
     ) -> Option<Self> {
         raw .trim()

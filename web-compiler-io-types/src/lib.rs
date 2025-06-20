@@ -24,6 +24,12 @@ impl<Value, Effect: Effectful> IO<Value, Effect> {
         effect.extend(effect2);
         IO { value, effect }
     }
+    pub fn and_then_with_context<Result>(self, apply: impl FnOnce(Value, &Effect) -> IO<Result, Effect>) -> IO<Result, Effect> {
+        let IO { value, mut effect } = self;
+        let IO { value, effect: effect2 } = apply(value, &effect);
+        effect.extend(effect2);
+        IO { value, effect }
+    }
     pub fn and_modify_context(self, apply: impl FnOnce(&mut Effect) -> ()) -> IO<Value, Effect> {
         let IO { value, mut effect } = self;
         apply(&mut effect);

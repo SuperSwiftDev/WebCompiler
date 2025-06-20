@@ -14,7 +14,7 @@ impl MacroTag for ContentMacroTag {
         &self,
         _: xml_ast::AttributeMap,
         _: xml_ast::Fragment,
-        scope: &mut macro_types::environment::LexicalEnvironment,
+        scope: &mut macro_types::environment::ProcessScope,
         _: &Self::Runtime,
     ) -> MacroIO<xml_ast::Node> {
         let node = scope.binding_scope

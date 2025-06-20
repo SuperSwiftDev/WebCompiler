@@ -1,7 +1,7 @@
 #![allow(unused)]
 use io_types::Effectful;
 // use lightningcss::error;
-use macro_types::environment::{AccumulatedEffects, Featureset, LexicalEnvironment, MacroIO, SourceHostRef, SourceHost};
+use macro_types::environment::{AccumulatedEffects, Featureset, ProcessScope, MacroIO, SourceHostRef, SourceHost};
 use macro_types::macro_tag::MacroTagSet;
 use macro_types::project::FileInput;
 use xml_ast::{transform::{EffectfulMarkupTransformer, ProcessMode}, AttributeMap, Element, Fragment, Node, TagBuf};
@@ -19,10 +19,10 @@ impl PreProcessor {
     pub fn fork(&self, file_input: &FileInput) -> Self {
         Self { runtime: self.runtime.fork(file_input) }
     }
-    pub fn process_sequence(&self, nodes: Vec<Node>, scope: &mut LexicalEnvironment) -> MacroIO<Vec<Node>> {
+    pub fn process_sequence(&self, nodes: Vec<Node>, scope: &mut ProcessScope) -> MacroIO<Vec<Node>> {
         xml_ast::transform::apply_effectful_markup_transformer_node_vec(nodes, self, scope)
     }
-    pub fn load_compile(&self, scope: &mut LexicalEnvironment) -> Result<MacroIO<Node>, PreProcessError> {
+    pub fn load_compile(&self, scope: &mut ProcessScope) -> Result<MacroIO<Node>, PreProcessError> {
         let source = self.runtime
             .source_context()
             .file_input()
@@ -69,7 +69,7 @@ impl EffectfulMarkupTransformer for PreProcessor {
     /// Output value type.
     type Output = Node;
     /// Top-down lexical environment.
-    type Scope = LexicalEnvironment;
+    type Scope = ProcessScope;
     /// Bottom-up accumulated state.
     type Effect = AccumulatedEffects;
 

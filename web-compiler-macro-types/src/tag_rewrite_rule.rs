@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use xml_ast::{Element, Node};
 
-use crate::environment::{LexicalEnvironment, MacroIO, Featureset};
+use crate::environment::{ProcessScope, MacroIO, Featureset};
 
 /// Applied during the bottom-up traversal phase.
 pub trait TagRewriteRule {
@@ -12,7 +12,7 @@ pub trait TagRewriteRule {
     fn pre_process(
         &self,
         element: Element,
-        scope: &mut LexicalEnvironment,
+        scope: &mut ProcessScope,
         runtime: &Self::Runtime,
     ) -> MacroIO<Node>;
     fn post_process(
@@ -45,7 +45,7 @@ impl<Runtime: Featureset> TagRewriteRuleSet<Runtime> {
     pub fn try_apply_pre_processors(
         &self,
         element: Element,
-        scope: &mut LexicalEnvironment,
+        scope: &mut ProcessScope,
         runtime: &Runtime,
     ) -> MacroIO<Node> {
         let element_tag_str = element.tag.as_normalized();

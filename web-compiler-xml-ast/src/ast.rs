@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 use std::slice::{Iter, IterMut};
 use std::ops::{Index, IndexMut};
-use crate::{AttributeMap, TagBuf};
+use crate::{AttributeKeyBuf, AttributeMap, AttributeValueBuf, TagBuf};
 
 // ————————————————————————————————————————————————————————————————————————————
 // DATA MODEL — XML NODES
@@ -120,6 +120,10 @@ impl Element {
     }
     pub fn with_attributes(mut self, attributes: AttributeMap) -> Self {
         self.attributes.extend(attributes);
+        self
+    }
+    pub fn with_attribute(mut self, key: impl Into<AttributeKeyBuf>, value: impl Into<AttributeValueBuf>) -> Self {
+        self.attributes.insert(key.into(), value.into());
         self
     }
     pub fn with_children(mut self, children: impl IntoIterator<Item=Node>) -> Self {

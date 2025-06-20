@@ -11,7 +11,14 @@ pub fn resolve_file_path_paterns(patterns: &[String]) -> Result<Vec<PathBuf>, Bo
         for pattern in glob::glob(pattern)? {
             match pattern {
                 Ok(path) => {
-                    results.push(path);
+                    let should_ignore = path
+                        .file_name()
+                        .and_then(|n| n.to_str())
+                        .map(|x| x.starts_with("."))
+                        .unwrap_or(false);
+                    if !should_ignore {
+                        results.push(path);
+                    }
                     continue;
                 }
                 Err(error) => return Err(Box::new(error)),

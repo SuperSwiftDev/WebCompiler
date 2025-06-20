@@ -1,0 +1,37 @@
+<!-- Considering a new site specification idea -->
+ 
+<page src="./pages/index.html" target="index.html">
+    <title>Homepage</title>
+    <page src="./pages/about.html" target="about.html">
+        <title>About Page</title>
+    </page>
+    <page src="./pages/blog.html" target="blog.html">
+        <title>Blog | Read Our Latest Posts</title>
+        <page src="blog/introducing-the-compiler.html">
+            <title>Introducing the Web Compiler</title>
+        </page>
+        <page src="blog/performance-vs-flexibility.html">
+            <title>Performance vs Flexibility</title>
+        </page>
+        <page-files src="blog/*.html"></page-files>
+    </page>
+    <page src="./pages/docs.html" target="docs/index.html">
+        <title>Documentation</title>
+        <page src="./pages/docs/overview.html">
+            <title>Documentation Overview</title>
+        </page>
+        <page src="./pages/docs/getting-started.html">
+            <title>Getting Started</title>
+        </page>
+        <page src="./pages/docs/cli/index.html">
+            <title>Command Line Interface</title>
+        </page>
+        <page src="./pages/docs/cli/commands.html">
+            <title>Command Reference</title>
+        </page>
+    </page>
+    <page src="./pages/samples.html">
+        <title>Samples</title>
+    </page>
+</page>
+

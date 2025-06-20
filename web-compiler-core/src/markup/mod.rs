@@ -4,7 +4,7 @@ pub mod macros;
 pub mod rewrites;
 
 use std::path::PathBuf;
-use macro_types::environment::{AccumulatedEffects, LexicalEnvironment, MacroIO, SourcePathResolver, SourceHostRef};
+use macro_types::environment::{AccumulatedEffects, ProcessScope, MacroIO, SourcePathResolver, SourceHostRef};
 use macro_types::macro_tag::MacroTagSet;
 use macro_types::project::{FileInput, ProjectContext, ResolvedDependencies};
 use macro_types::scope::BinderValue;
@@ -82,7 +82,7 @@ impl SourcePipeline {
         let runtime = self.macro_runtime();
         let pre_processor = PreProcessor::new(runtime);
         let content = {
-            let mut env = LexicalEnvironment::default();
+            let mut env = ProcessScope::default();
             match pre_processor.load_compile(&mut env) {
                 Ok(x) => x,
                 Err(error) => {
@@ -100,18 +100,23 @@ impl SourcePipeline {
         });
         if let Some(template_input) = template_input {
             let pre_processor = pre_processor.fork(&template_input);
-            let finale = content.and_then(|content| {
-                let mut env = LexicalEnvironment::default();
-                env.binding_scope.insert("content", BinderValue::node(content.clone()));
-                match pre_processor.load_compile(&mut env) {
-                    Ok(x) => x,
-                    Err(error) => {
-                        let source_path = self.source_file_input().source_file();
-                        crate::common::log::log_error(&error, Some(source_path), None);
-                        MacroIO::wrap(content)
+            let finale = content
+                .and_then_with_context(|content, ctx| {
+                    // - -
+                    let mut env = ProcessScope::default()
+                        .with_chained_state(ctx.chained_state());
+                    // - -
+                    // println!("{}")
+                    env.binding_scope.insert("content", BinderValue::node(content.clone()));
+                    match pre_processor.load_compile(&mut env) {
+                        Ok(x) => x,
+                        Err(error) => {
+                            let source_path = self.source_file_input().source_file();
+                            crate::common::log::log_error(&error, Some(source_path), None);
+                            MacroIO::wrap(content)
+                        }
                     }
-                }
-            });
+                });
             return Ok(finale)
         }
         return Ok(content)

@@ -2,7 +2,7 @@ use std::{collections::{BTreeMap, BTreeSet}, rc::Rc};
 
 use xml_ast::{transform::ProcessMode, AttributeMap, Element, Fragment, Node};
 
-use crate::environment::{Featureset, LexicalEnvironment, MacroIO, SourceHost};
+use crate::environment::{Featureset, ProcessScope, MacroIO, SourceHost};
 
 /// Applied during the top-down traversal phase.
 pub trait MacroTag {
@@ -12,7 +12,7 @@ pub trait MacroTag {
         &self,
         attributes: AttributeMap,
         children: Fragment,
-        scope: &mut LexicalEnvironment,
+        scope: &mut ProcessScope,
         runtime: &Self::Runtime,
     ) -> MacroIO<Node>;
 }
@@ -41,7 +41,7 @@ impl<Runtime: SourceHost> MacroTagSet<Runtime> {
     pub fn try_evaluate(
         &self,
         element: Element,
-        scope: &mut LexicalEnvironment,
+        scope: &mut ProcessScope,
         runtime: &Runtime,
     ) -> MacroIO<ProcessMode<Element, Node>> {
         let Element { tag, attributes, children } = element;

@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use web_compiler_io_types::IO;
 
 use crate::macro_tag::MacroTagSet;
-use crate::scope::BindingScope;
+use crate::scope::{BinderValue, BindingScope};
 use crate::context::ContextRegistry;
 
 use crate::project::{DependencyRelation, FileInput, ProjectContext};
@@ -16,9 +16,49 @@ pub use web_compiler_io_types::Effectful;
 // ————————————————————————————————————————————————————————————————————————————
 
 #[derive(Debug, Clone, Default)]
-pub struct LexicalEnvironment {
+pub struct ProcessScope {
     pub binding_scope: BindingScope,
     pub context_registry: ContextRegistry,
+    chained_state: ChainedState,
+}
+
+impl ProcessScope {
+    pub fn with_binding_scope(mut self, binding_scope: BindingScope) -> Self {
+        self.binding_scope = binding_scope;
+        self
+    }
+    pub fn with_context_registry(mut self, context_registry: ContextRegistry) -> Self {
+        self.context_registry = context_registry;
+        self
+    }
+    pub fn with_chained_state(mut self, chained_state: ChainedState) -> Self {
+        self.chained_state = chained_state;
+        self
+    }
+    pub fn chained_state(&self) -> &ChainedState {
+        &self.chained_state
+    }
+}
+
+// ————————————————————————————————————————————————————————————————————————————
+// HOISTED STATE
+// ————————————————————————————————————————————————————————————————————————————
+
+#[derive(Debug, Clone, Default)]
+pub struct ChainedState {
+    hoisted: Vec<BinderValue>,
+}
+
+impl ChainedState {
+    pub fn push_hoisted(&mut self, new: impl Into<BinderValue>) {
+        self.hoisted.push(new.into());
+    }
+    pub fn lookup_hoisted_first_where(&mut self, predicate: impl Fn(&BinderValue) -> bool) -> Option<&BinderValue> {
+        self.hoisted.iter().find(|x| predicate(x))
+    }
+    pub fn hoisted(&self) -> &[BinderValue] {
+        &self.hoisted
+    }
 }
 
 // ————————————————————————————————————————————————————————————————————————————
@@ -29,12 +69,22 @@ pub struct LexicalEnvironment {
 pub struct AccumulatedEffects {
     pub dependencies: HashSet<DependencyRelation>,
     pub deferred_dependencies: HashSet<DependencyRelation>,
+    pub hoisted: Vec<BinderValue>,
+}
+
+impl AccumulatedEffects {
+    pub fn chained_state(&self) -> ChainedState {
+        ChainedState {
+            hoisted: self.hoisted.clone(),
+        }
+    }
 }
 
 impl Effectful for AccumulatedEffects {
     fn extend(&mut self, other: Self) {
         self.dependencies.extend(other.dependencies);
         self.deferred_dependencies.extend(other.deferred_dependencies);
+        self.hoisted.extend(other.hoisted);
     }
 }
 

@@ -1,14 +1,15 @@
+<!-- <define key="title" value="Performance vs Flexibility"></define> -->
+<bind path="host.title" as="title"></bind>
+
 <nav aria-label="Breadcrumb">
     <ol class="breadcrumb">
         <li>
-            <a href="../pages/index.html"><span>Home</span></a>
+            <a href="./../index.html"><span>Home</span></a>
         </li>
         <li>
-            <a href="../pages/blog/index.html"><span>Blog</span></a>
+            <a href="./index.html"><span>Blog</span></a>
         </li>
-        <li aria-current="page">
-            <a href="./../pages/blog/performance-vs-flexibility.html"><span>Performance vs Flexibility</span></a>
-        </li>
+        <li aria-current="page"><span><inject path="title"></inject></span></li>
     </ol>
 </nav>
 
@@ -25,3 +26,4 @@
         color: #403d3d;
     }
 </style>
+

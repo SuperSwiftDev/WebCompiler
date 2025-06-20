@@ -5,6 +5,10 @@ mod provision;
 mod context;
 mod bind;
 mod inject;
+mod route;
+mod define;
+mod hoist;
+mod define_title;
 
 use std::rc::Rc;
 
@@ -15,6 +19,10 @@ pub use provision::*;
 pub use context::*;
 pub use bind::*;
 pub use inject::*;
+pub use route::*;
+pub use define::*;
+pub use hoist::*;
+pub use define_title::*;
 
 use macro_types::macro_tag::{MacroTag, MacroTagSet};
 
@@ -29,6 +37,10 @@ pub fn standard_macro_tags() -> Vec<Rc<dyn MacroTag<Runtime = CompilerRuntime>>>
         Rc::new(InjectMacroTag),
         Rc::new(ProvisionMacroTag),
         Rc::new(ContextMacroTag),
+        Rc::new(RouteMacroTag),
+        Rc::new(DefineMacroTag),
+        Rc::new(HoistMacroTag),
+        Rc::new(DefineTitleMacroTag),
     ]
 }
 

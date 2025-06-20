@@ -125,6 +125,10 @@ pub struct BindingScope {
 }
 
 impl BindingScope {
+    pub fn extend(mut self, other: Self) -> Self {
+        self.environment.extend(other.environment);
+        self
+    }
     pub fn insert(&mut self, key: impl Into<String>, value: impl Into<BinderValue>) -> Option<BinderValue> {
         let key = key.into();
         let value = value.into();
