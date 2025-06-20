@@ -5,7 +5,7 @@ use serde::{Deserialize, Serialize};
 use xml_ast::TagBuf;
 use crate::project::{FileInput, ProjectContext};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct SiteTreeLayout {
     breadcrumb_path_map: BTreeMap::<PathBuf, SystemBreadcrumbPath>,
 }

@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::{cell::RefCell, path::Path};
 use colored::Colorize;
 use futures::{StreamExt, TryFutureExt};
 
@@ -30,6 +30,11 @@ impl ClientBuilder {
     }
     pub fn with_api_key(mut self, api_key: impl AsRef<str>) -> Self {
         self.api_key = Some(api_key.as_ref().to_string());
+        self
+    }
+    pub fn with_api_key_path(mut self, path: impl AsRef<Path>) -> Self {
+        let contents = std::fs::read_to_string(path).expect("api key file path");
+        self.api_key = Some(contents);
         self
     }
     pub fn with_request_body(mut self, request_body: super::request::RequestBuilder) -> Self {
@@ -238,6 +243,7 @@ impl StreamingClient {
 pub struct ResponseChunkCollection(pub Vec<response::streaming::ResponseChunk>);
 
 impl ResponseChunkCollection {
+    pub fn len(&self) -> usize { self.0.len() }
     pub fn content(&self, index: usize) -> Option<String> {
         let output = self.0
             .iter()

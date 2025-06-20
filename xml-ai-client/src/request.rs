@@ -78,7 +78,11 @@ pub struct RequestBuilder {
 impl RequestBuilder {
     /// A list of messages comprising the conversation so far.
     pub fn with_messages(mut self, messages: Vec<Message>) -> Self {
-        self.messages = messages;
+        self.messages.extend(messages);
+        self
+    }
+    pub fn with_message(mut self, message: Message) -> Self {
+        self.messages.push(message);
         self
     }
     /// ID of the model to use. See the [model endpoint compatibility](https://platform.openai.com/docs/models/model-endpoint-compatibility) table for details on which models work with the Chat API.
@@ -456,6 +460,15 @@ impl Message {
         let content = content.as_ref().to_string();
         let name = name.as_ref().to_string();
         Message::Function { content, name }
+    }
+    pub fn content(&self) -> &str {
+        match self {
+            Self::User { content, .. } => &content,
+            Self::Assistant { content, .. } => &content,
+            Self::System { content, .. } => &content,
+            Self::Tool { content, .. } => &content,
+            Self::Function { content, .. } => &content,
+        }
     }
 }
 

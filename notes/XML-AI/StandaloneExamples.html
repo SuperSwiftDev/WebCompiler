@@ -1,0 +1,260 @@
+<prompt name="question-1">
+    <message role="system">You are a helpful assistant.</message>
+    <message role="user">What is heavier, a kilo of feathers or a pound of steel?</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+    <message role="user">Explain your reasoning.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+    <message role="user">Would you like to revise your answer?</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+    <message role="user">Finally, after considering your thoughts, please state just the answer.</message>
+</prompt>
+
+<prompt name="constraint-satisfaction">
+    <message role="user">
+You have five guests and only three chairs. One chair must go to the oldest guest. One must go to the person wearing red. The remaining chair can’t go to someone under 18.
+
+Who gets the chairs?
+    </message>
+    <message-breakpoint role="assistant">
+The three guests who get the chairs are:  
+1. The oldest guest  
+2. The guest wearing red  
+3. An adult guest (18 or older) who is neither the oldest nor wearing red  
+    </message-breakpoint>
+
+    <message role="user">Show your logic.</message>
+    <message-breakpoint role="assistant">
+To satisfy the constraints:
+
+- **Constraint 1**: One chair must go to the **oldest guest**.
+- **Constraint 2**: One chair must go to the **guest wearing red**.
+- **Constraint 3**: The third chair **must not** go to someone **under 18**.
+
+Now, these categories might overlap. For example, the oldest guest might also be wearing red, or the guest in red might be under 18.
+
+But based on what we know:
+1. Assign a chair to the **oldest guest**.
+2. Assign a chair to the **guest wearing red**.
+3. For the third chair, **exclude any guest under 18** and also exclude anyone who already got a chair in step 1 or 2.
+
+This guarantees:
+- Each constraint is individually respected.
+- No chair is assigned to someone under 18 for the third slot.
+- Guests who satisfy multiple constraints still only occupy one chair.
+
+Without specific identities, this is the most general solution that meets all rules.
+    </message-breakpoint>
+
+    <message role="user">If the guest in red is under 18, what happens?</message>
+    <message-breakpoint role="assistant">
+If the guest wearing red is **under 18**, that is still acceptable for the second chair because:
+
+- The rule about age only applies to the **third** chair.
+- The red-wearing guest is getting a chair because of what they’re wearing, **not their age**.
+
+So the updated logic would be:
+1. Chair 1 → Oldest guest  
+2. Chair 2 → Guest wearing red (even if under 18)  
+3. Chair 3 → An adult guest (not under 18), who is **neither** the oldest nor wearing red  
+
+All constraints are satisfied.
+    </message-breakpoint>
+</prompt>
+
+
+<prompt name="instruction-discipline-workflow">
+    <message role="user">Name 3 vegetables. One word per item. No elaboration.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+    <message role="user">Okay now tell me why you picked them.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+    <message role="user">Actually, go back and just give the 3 words again — no extra text.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+</prompt>
+
+<prompt name="math-process-eval-workflow">
+    <message role="user">What is 37 * 42? Show your steps.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+    <message role="user">Now double-check your work. Is your final answer still correct?</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+</prompt>
+
+<prompt name="abstraction-generalization-workflow">
+    <message role="user">A dog chases a cat because it sees it as prey. Why?</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+    <message role="user">Now generalize this behavior to a broader principle about animals.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+    <message role="user">Give a different example that follows the same principle.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+</prompt>
+
+
+<prompt name="conflicting-facts-1">
+    <message role="system">You are a reliable assistant that prefers truth over guessing.</message>
+    <message role="user">The Eiffel Tower is in Rome, correct?</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+    <message role="user">Actually, I read it was in Berlin.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+    <message role="user">Alright, just tell me where the Eiffel Tower really is, and say nothing else.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+</prompt>
+
+<prompt name="iterative-thinking-1">
+    <message role="user">How can I make my home more energy efficient?</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+    <message role="user">Now improve your answer by focusing only on low-cost strategies.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+    <message role="user">Improve it again, now focus only on what I can do in the winter months.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+</prompt>
+
+<prompt name="format-discipline-1">
+    <message role="user">List three benefits of regular exercise, in this exact format: 1 sentence per benefit, no bullet points, no bolding, no emojis.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+</prompt>
+
+<prompt name="moral-dilemma-1">
+    <message role="user">Is it ever okay to lie to protect someone’s feelings?</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+    <message role="user">Now explore the opposite perspective as well.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+    <message role="user">Finally, take a position and justify it in one sentence.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+</prompt>
+
+<prompt name="compression-1">
+    <message role="user">Summarize how a car engine works in fewer than 30 words.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+    <message role="user">Now do it in fewer than 10 words.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+</prompt>
+
+<prompt name="compression-recipe">
+    <message role="user">How do I make scrambled eggs? Keep it under 20 words.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+    <message role="user">Now do it in 6 words max.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+</prompt>
+
+<prompt name="compression-evolution">
+    <message role="user">Explain evolution by natural selection in 50 words.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+    <message role="user">Now do it in 25 words.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+    <message role="user">Now try 10 words.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+    <message role="user">Compress to 3 words.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+</prompt>
+
+<prompt name="compression-literary-style">
+    <message role="user">Summarize the story of *Romeo and Juliet* in 15 words.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+    <message role="user">Now redo it in Shakespearean tone, still under 15 words.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+</prompt>
+
+<prompt name="compression-productivity">
+    <message role="user">List 3 productivity tips in one sentence, under 12 words total.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+</prompt>
+
+<prompt name="compression-startup-pitch">
+    <message role="user">Pitch a startup idea for remote work tools in 30 words.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+    <message role="user">Now do it in 10.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+    <message role="user">Now 3.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+</prompt>
+
+<prompt name="compression-eli5-gravity">
+    <message role="user">Explain gravity like I’m five. 20 words max.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+    <message role="user">Now compress that into one sentence of 5 words.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+</prompt>
+
+<prompt name="compression-medical-risk">
+    <message role="user">What are the risks of general anesthesia? 40 words or fewer.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+    <message role="user">Now compress it to a 1-line patient explanation.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+</prompt>
+
+<prompt name="meta-business-email-summary">
+    <message role="user">
+I received the following email:
+
+"Hello, I'm extremely frustrated with your billing system. I was charged twice for the same service on different dates, and no one from your support team has responded to my emails for a week. This is unacceptable. Please refund me immediately or I’ll be taking further action."
+
+Summarize this email in under 25 words.
+    </message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+    <message role="user">Explain how you decided what to keep and what to remove in your summary.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+</prompt>
+
+<prompt name="meta-research-summary">
+    <message role="user">
+Here's an abstract:
+
+"This study investigates the effects of micro dosing psilocybin on creative thinking and mood in adults. Participants reported statistically significant improvements in both divergent thinking and emotional well-being over a six-week period. The study was double-blind and placebo-controlled. Results suggest potential cognitive benefits of micro dosing for healthy individuals."
+
+Summarize the abstract in one sentence.
+    </message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+    <message role="user">Explain how you preserved the key point despite compressing it to a single sentence.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+</prompt>
+
+<prompt name="meta-investor-summary">
+    <message role="user">
+A startup pitch claims:
+
+"We are building a battery recycling platform that uses AI to predict degradation rates, optimize recovery, and drastically reduce waste from lithium-ion batteries. Our tech integrates into existing supply chains with minimal overhead."
+
+Summarize the key selling point in 15 words.
+    </message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+    <message role="user">How did you decide what the most important detail was?</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+</prompt>
+
+<prompt name="meta-therapy-summary">
+    <message role="user">
+Session notes:  
+"Client reports increased anxiety due to job insecurity and a recent breakup. They're struggling with sleep and recurring negative thoughts. Wants to explore mindfulness or medication."
+
+Summarize the core issue in under 20 words.
+    </message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+    <message role="user">Now explain how you chose that core issue.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+</prompt>
+
+
+<prompt name="meta-code-diff-summary">
+    <message role="user">
+Here's a simplified diff:
+```
+
+* fn calculate\_price(x: f64) -> f64 {
+* ```
+  x * 1.2
+  ```
+* }
+
+- fn calculate\_price(x: f64, tax\_rate: f64) -> f64 {
+- ```
+  x * tax_rate
+  ```
+- }
+
+```
+
+Summarize what changed in 15 words or fewer.
+    </message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+    <message role="user">Explain how you decided what to include in the summary.</message>
+    <message-breakpoint role="assistant"></message-breakpoint>
+</prompt>

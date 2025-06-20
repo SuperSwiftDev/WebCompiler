@@ -36,6 +36,13 @@ pub struct SourcePipeline {
     pub all_input_rules: Vec<FileInput>,
     pub site_tree_layout: SiteTreeLayout,
     pub resolved_dependencies: ResolvedDependencies,
+    pub output_writer_mode: OutputWriterMode,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum OutputWriterMode {
+    WriteFile,
+    JustReturnNode,
 }
 
 impl SourcePipeline {
@@ -58,7 +65,7 @@ impl SourcePipeline {
     pub fn source_file_input(&self) -> &FileInput {
         &self.file_input
     }
-    pub fn execute(&mut self) {
+    pub fn execute(&mut self) -> Result<Node, ()> {
         let result = self
             .execute_pre_process_phase()
             .map(|payload| {
@@ -66,12 +73,16 @@ impl SourcePipeline {
             })
             .map(|(finalized, effects)| {
                 let _ = effects;
-                self.emit_post_processed_file(&finalized)
+                self.emit_post_processed_file(&finalized);
+                finalized
             });
         match result {
-            Ok(()) => (),
+            Ok(node) => {
+                Ok(node)
+            },
             Err(error) => {
-                eprintln!("{}", error.to_string())
+                eprintln!("{}", error.to_string());
+                Err(())
             }
         }
     }
@@ -126,30 +137,30 @@ impl SourcePipeline {
             source: path.to_path_buf(),
             public: None,
         });
+        let mut pre_processor = pre_processor;
         if let Some(template_input) = template_input {
-            let pre_processor = pre_processor.fork(&template_input);
-            let finale = content
-                .and_then_with_context(| content, ctx| {
-                    let host_info = HostInfo::new(
-                        breadcrumb_path_value,
-                        ctx.chained_state().hoisted().to_owned()
-                    );
-                    let mut env = ProcessScope::new(host_info)
-                        .and_insert_binder_value("content", BinderValue::node(content.clone()));
-                    // - -
-                    match pre_processor.load_compile(&mut env) {
-                        Ok(x) => x,
-                        Err(error) => {
-                            let source_path = self.source_file_input().source_file();
-                            crate::common::log::log_error(&error, Some(source_path), None);
-                            MacroIO::wrap(content)
-                        }
-                    }
-                });
-            return Ok(finale)
+            pre_processor = pre_processor.fork(&template_input);
         }
+        let finale = content
+            .and_then_with_context(| content, ctx| {
+                let host_info = HostInfo::new(
+                    breadcrumb_path_value,
+                    ctx.chained_state().hoisted().to_owned()
+                );
+                let mut env = ProcessScope::new(host_info)
+                    .and_insert_binder_value("content", BinderValue::node(content.clone()));
+                // - -
+                match pre_processor.load_compile(&mut env) {
+                    Ok(x) => x,
+                    Err(error) => {
+                        let source_path = self.source_file_input().source_file();
+                        crate::common::log::log_error(&error, Some(source_path), None);
+                        MacroIO::wrap(content)
+                    }
+                }
+            });
         // return Ok(content)
-        unimplemented!("TODO")
+        return Ok(finale)
     }
     fn execute_post_process_phase(&mut self, processed: MacroIO<Node>) -> (Node, AccumulatedEffects) {
         let ( processed, effects ) = processed.collapse();
@@ -177,11 +188,13 @@ impl SourcePipeline {
         ( finalized, effects )
     }
     fn emit_post_processed_file(&mut self, node: &Node) {
-        let html_string = node.format_document_pretty();
         // let html_string = node.format_document();
         let resolved_public_path = self.file_input.resolved_public_path(&self.pipeline_spec.project);
-        let output_path = self.file_input.to_output_file_path(&self.pipeline_spec.project);
-        crate::common::path_utils::write_output_file_smart(&output_path, html_string.as_bytes());
+        if self.output_writer_mode == OutputWriterMode::WriteFile {
+            let html_string = node.format_document_pretty();
+            let output_path = self.file_input.to_output_file_path(&self.pipeline_spec.project);
+            crate::common::path_utils::write_output_file_smart(&output_path, html_string.as_bytes());
+        }
         self.resolved_dependencies.emitted_files.insert(resolved_public_path);
     }
 }

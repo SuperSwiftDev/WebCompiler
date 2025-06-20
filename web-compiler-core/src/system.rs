@@ -6,6 +6,8 @@ use macro_types::breadcrumbs::SiteTreeLayout;
 use macro_types::project::{FileInput, ProjectContext, ResolvedDependencies};
 use web_compiler_types::{CompilerFeatureset, CompilerPipeline, CompilerRuntime};
 
+use crate::markup::OutputWriterMode;
+
 
 pub fn web_publishing_compiler_featureset() -> CompilerFeatureset {
     CompilerFeatureset {
@@ -44,8 +46,9 @@ pub fn execute_compiler_pipeline(compiler_pipeline: CompilerPipeline) {
                 all_input_rules: all_input_rules.clone(),
                 resolved_dependencies: ResolvedDependencies::default(),
                 site_tree_layout: site_tree_layout.clone(),
+                output_writer_mode: OutputWriterMode::WriteFile,
             };
-            input_pipeline.execute();
+            let _ = input_pipeline.execute();
             input_pipeline.resolved_dependencies
         })
         .fold(ResolvedDependencies::default(), |mut acc, item| {

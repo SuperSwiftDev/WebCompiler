@@ -12,11 +12,15 @@ pathdiff = "0.2.3"
 glob = "0.3.2"
 itertools = "0.14.0"
 
+tokio = { version = "1.45.1", features = ["full"] }
+# futures = { version = "0.3", features = [ "default" ] }
+
 web-compiler-io-types = { path = "../web-compiler-io-types" }
 web-compiler-xml-ast = { path = "../web-compiler-xml-ast" }
 web-compiler-macro-types = { path = "../web-compiler-macro-types" }
 web-compiler-css = { path = "../web-compiler-css" }
 web-compiler-types = { path = "../web-compiler-types" }
+xml-ai-core = { path = "../xml-ai-core" }
 
 # —— CSS PARSING ——————————————————————————————————————————————————————————————
 # lightningcss = { version = "1.0.0-alpha.66", features = ['visitor']}

@@ -178,12 +178,18 @@ pub struct MessageContent {
 }
 
 impl MessageContent {
+    pub fn new(content: impl Into<String>) -> Self {
+        Self { content: content.into() }
+    }
     fn from_fragment(node: xml_ast::Fragment) -> Result<Self, DslFormatErrorList> {
         let content = node
             .extract_text_strict()
             .map_err(|_| InvalidMessageContent)?
             .join("");
         Ok(Self { content })
+    }
+    pub fn to_string(&self) -> String {
+        self.content.clone()
     }
 }
 
@@ -208,12 +214,12 @@ impl DslFormatError for InvalidMessageContent {
 // ————————————————————————————————————————————————————————————————————————————
 
 #[derive(Debug, Clone)]
-pub struct MessageTag {
+pub struct MessageElement {
     pub attributes: MessageAttributes,
     pub content: MessageContent,
 }
 
-impl MessageTag {
+impl MessageElement {
     fn tag_type() -> xml_ast::TagBuf {
         xml_ast::TagBuf::new("message")
     }
@@ -253,12 +259,12 @@ impl DslFormatError for InvalidMessage {
 // ————————————————————————————————————————————————————————————————————————————
 
 #[derive(Debug, Clone)]
-pub struct MessageBreakpointTag {
+pub struct MessageBreakpointElement {
     pub attributes: MessageAttributes,
     pub content: MessageContent,
 }
 
-impl MessageBreakpointTag {
+impl MessageBreakpointElement {
     fn tag_type() -> xml_ast::TagBuf {
         xml_ast::TagBuf::new("message-breakpoint")
     }
@@ -336,18 +342,18 @@ impl DslFormatError for InvalidPromptAttributes {
 
 #[derive(Debug, Clone)]
 pub enum PromptChild {
-    Message(MessageTag),
-    MessageBreakpoint(MessageBreakpointTag),
+    Message(MessageElement),
+    MessageBreakpoint(MessageBreakpointElement),
 }
 
 impl PromptChild {
-    pub fn as_message(&self) -> Option<&MessageTag> {
+    pub fn as_message(&self) -> Option<&MessageElement> {
         match self {
             Self::Message(x) => Some(x),
             _ => None,
         }
     }
-    pub fn as_message_breakpoint(&self) -> Option<&MessageBreakpointTag> {
+    pub fn as_message_breakpoint(&self) -> Option<&MessageBreakpointElement> {
         match self {
             Self::MessageBreakpoint(x) => Some(x),
             _ => None,
@@ -357,11 +363,11 @@ impl PromptChild {
 
 impl PromptChild {
     pub fn from_element(element: xml_ast::Element) -> Result<Self, DslFormatErrorList> {
-        if MessageTag::matches(&element.tag) {
-            return MessageTag::from_element(element).map(PromptChild::Message)
+        if MessageElement::matches(&element.tag) {
+            return MessageElement::from_element(element).map(PromptChild::Message)
         }
-        if MessageBreakpointTag::matches(&element.tag) {
-            return MessageBreakpointTag::from_element(element).map(PromptChild::MessageBreakpoint)
+        if MessageBreakpointElement::matches(&element.tag) {
+            return MessageBreakpointElement::from_element(element).map(PromptChild::MessageBreakpoint)
         }
         Err(DslFormatErrorList::new(Rc::new(InvalidPromptChild)))
     }
@@ -388,18 +394,18 @@ impl DslFormatError for InvalidPromptChild {
 // ————————————————————————————————————————————————————————————————————————————
 
 #[derive(Debug, Clone)]
-pub struct PromptTag {
+pub struct PromptElement {
     pub attributes: PromptAttributes,
     pub children: Vec<PromptChild>,
 }
 
-impl PromptTag {
+impl PromptElement {
     pub fn name(&self) -> &str {
         &self.attributes.name
     }
 }
 
-impl PromptTag {
+impl PromptElement {
     fn tag_type() -> xml_ast::TagBuf {
         xml_ast::TagBuf::new("prompt")
     }
@@ -423,7 +429,7 @@ impl PromptTag {
                 }
             }
         }
-        Ok(PromptTag { attributes, children: items })
+        Ok(PromptElement { attributes, children: items })
     }
 }
 
@@ -447,11 +453,11 @@ impl DslFormatError for InvalidPrompt {
 
 #[derive(Debug, Clone)]
 pub enum DocumentItem {
-    Prompt(PromptTag),
+    Prompt(PromptElement),
 }
 
 impl DocumentItem {
-    pub fn as_prompt(&self) -> Option<&PromptTag> {
+    pub fn as_prompt(&self) -> Option<&PromptElement> {
         match self {
             Self::Prompt(x) => Some(x),
         }
@@ -460,8 +466,8 @@ impl DocumentItem {
 
 impl DocumentItem {
     fn from_element(element: xml_ast::Element) -> Result<Self, DslFormatErrorList> {
-        if PromptTag::matches(&element.tag) {
-            return PromptTag::from_element(element).map(DocumentItem::Prompt)
+        if PromptElement::matches(&element.tag) {
+            return PromptElement::from_element(element).map(DocumentItem::Prompt)
         }
         Err(DslFormatErrorList::new(Rc::new(InvalidDocumentItem)))
     }
@@ -491,11 +497,14 @@ pub struct Document {
 }
 
 impl Document {
-    pub fn lookup_prompt(&self, name: impl AsRef<str>) -> Option<&PromptTag> {
+    pub fn lookup_prompt_where(&self, predicate: impl Fn(&PromptElement) -> bool) -> Option<&PromptElement> {
         self.items
             .iter()
             .filter_map(|x| x.as_prompt())
-            .find(|x| x.name() == name.as_ref())
+            .find(|x| predicate(x))
+    }
+    pub fn lookup_prompt(&self, name: impl AsRef<str>) -> Option<&PromptElement> {
+        self.lookup_prompt_where(|x| x.name() == name.as_ref())
     }
 }
 

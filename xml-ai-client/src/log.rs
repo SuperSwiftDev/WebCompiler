@@ -67,7 +67,7 @@ impl Default for StdOutLogger {
 impl Logger for StdOutLogger {
     fn log(&mut self, msg: &str) {
         if self.colorize {
-            let msg = msg.truecolor(197, 191, 201);
+            let msg = msg.bright_red();
             print!("{msg}");
             return
         }
@@ -101,7 +101,7 @@ impl Default for StdErrLogger {
 impl Logger for StdErrLogger {
     fn log(&mut self, msg: &str) {
         if self.colorize {
-            let msg = msg.truecolor(197, 191, 201);
+            let msg = msg.bright_red();
             print!("{msg}");
             return
         }

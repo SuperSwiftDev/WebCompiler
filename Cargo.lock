@@ -2793,11 +2793,13 @@ dependencies = [
  "pathdiff",
  "serde",
  "serde_json",
+ "tokio",
  "web-compiler-css",
  "web-compiler-io-types",
  "web-compiler-macro-types",
  "web-compiler-types",
  "web-compiler-xml-ast",
+ "xml-ai-core",
 ]
 
 [[package]]
@@ -3190,6 +3192,12 @@ dependencies = [
 name = "xml-ai"
 version = "0.1.0"
 dependencies = [
+ "clap",
+ "serde",
+ "serde_json",
+ "tokio",
+ "toml",
+ "web-compiler-core",
  "xml-ai-core",
 ]
 
@@ -3210,6 +3218,8 @@ dependencies = [
 name = "xml-ai-core"
 version = "0.1.0"
 dependencies = [
+ "serde",
+ "serde_json",
  "unindent",
  "web-compiler-xml-ast",
  "xml-ai-client",
