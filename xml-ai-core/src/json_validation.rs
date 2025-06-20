@@ -205,13 +205,12 @@ impl ValidatorBuilder {
             self.assert_format,
         ).map_err(|e| ValidatorBuilderError::SchemaError(e))?;
         let validator = Rc::new(validator);
-        Ok(Validator {
-            validator,
-            instance: self.instance.ok_or(ValidatorBuilderError::MissingInstance)?,
-        })
+        let instance = self.instance.ok_or(ValidatorBuilderError::MissingInstance)?;
+        Ok(Validator { validator, instance })
     }
 }
 
+#[derive(Debug, Clone)]
 pub struct Validator {
     validator: Rc<jsonschema::Validator>,
     instance: String,
