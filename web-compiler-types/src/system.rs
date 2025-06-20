@@ -1,6 +1,6 @@
 //! Types for defining the overall compiler.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use macro_types::environment::{Featureset, SourceHostRef, SourceHost};
 use macro_types::macro_tag::MacroTagSet;
@@ -48,6 +48,9 @@ impl CompilerRuntime {
             project_context: &self.project,
             file_input: &self.source_file,
         }
+    }
+    pub fn with_source_file_path<T>(&self, apply: impl FnOnce(&Path) -> T) -> T {
+        apply(self.source_file.source_file())
     }
 }
 

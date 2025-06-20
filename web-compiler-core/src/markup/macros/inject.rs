@@ -20,7 +20,7 @@ impl MacroTag for InjectMacroTag {
     ) -> MacroIO<xml_ast::Node> {
         if attributes.contains_key("hoisted") {
             let nodes = scope
-                .chained_state()
+                .host_info()
                 .hoisted()
                 .into_iter()
                 .filter_map(|x| x.as_node())
@@ -29,18 +29,18 @@ impl MacroTag for InjectMacroTag {
                 .map(|x| Node::Element(x))
                 .collect::<Vec<_>>();
             return MacroIO::wrap(Node::Fragment(Fragment::from_nodes(nodes)))
-            // return MacroIO::wrap(Node::empty())
         }
         let injection = attributes
             .get("path")
-            .and_then(|path_key| {
-                let result = scope.binding_scope.lookup(path_key.as_str());
-                if result.is_none() {
-                    let source_file = runtime.source_context();
-                    let source_file = source_file.file_input().source_file();
-                    eprintln!("⚠️ {source_file:?} failed to resolve binding `{:?}`", path_key.as_str());
+            .and_then(|target| {
+                let path_expr = macro_types::path_expr::PathExpression::parse(target.as_str()).unwrap();
+                let path_value = path_expr.evaluate(&scope.binding_scope);
+                if path_value.is_none() {
+                    runtime.with_source_file_path(|file| {
+                        eprintln!("⚠️ {file:?} `<inject>` failed to resolve binding `{:?}`", target.as_str());
+                    });
                 }
-                result
+                path_value
             })
             .and_then(|binder_value| {
                 match binder_value {

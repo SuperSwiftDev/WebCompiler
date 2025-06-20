@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use serde::Serialize;
 use xml_ast::{Fragment, Node};
 
 
@@ -58,6 +59,10 @@ impl BinderValue {
     pub fn json_string(text: impl Into<String>) -> Self {
         Self::Json(JsonBinderValue::String(text.into()))
     }
+    pub fn json<T: Serialize>(value: T) -> Self {
+        let value = serde_json::to_value(value).unwrap();
+        Self::Json(JsonBinderValue::from_json_value(value))
+    }
     pub fn as_markup(&self) -> Option<&MarkupBinderValue> {
         match self {
             Self::Markup(x) => Some(x),
@@ -111,6 +116,39 @@ impl JsonBinderValue {
     pub fn object(map: impl IntoIterator<Item = (String, JsonBinderValue)>) -> Self {
         let map = map.into_iter().collect::<BTreeMap<_, _>>();
         JsonBinderValue::Object(map)
+    }
+    pub fn from_json_value(value: impl Into<serde_json::Value>) -> Self {
+        match value.into() {
+            serde_json::Value::Null => {
+                Self::Null
+            }
+            serde_json::Value::Bool(bool) => {
+                Self::Bool(bool)
+            }
+            serde_json::Value::Number(number) => {
+                let number = number.to_string();
+                Self::Number(number)
+            }
+            serde_json::Value::String(string) => {
+                Self::String(string)
+            }
+            serde_json::Value::Array(xs) => {
+                let xs = xs
+                    .into_iter()
+                    .map(|x| Self::from_json_value(x))
+                    .collect::<Vec<_>>();
+                Self::Array(xs)
+            }
+            serde_json::Value::Object(xs) => {
+                let xs = xs
+                    .into_iter()
+                    .map(|(k, v)| {
+                        (k, Self::from_json_value(v))
+                    })
+                    .collect::<BTreeMap<_, _>>();
+                Self::Object(xs)
+            }
+        }
     }
 }
 

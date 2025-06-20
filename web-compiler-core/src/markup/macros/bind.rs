@@ -29,9 +29,9 @@ impl MacroTag for BindMacroTag {
                 let path_expr = match path_expr {
                     Ok(x) => x,
                     Err(error) => {
-                        let source_file = runtime.source_context();
-                        let source_file = source_file.file_input().source_file();
-                        eprintln!("⚠️ {source_file:?} failed to resolve path expression `{:?}`: {error}", path_key.as_str());
+                        runtime.with_source_file_path(|file| {
+                            eprintln!("⚠️ {file:?} <bind> failed to resolve path expression `{:?}`: {error}", path_key.as_str());
+                        });
                         return None
                     }
                 };
@@ -39,9 +39,9 @@ impl MacroTag for BindMacroTag {
                 let binder_value = match binder_value {
                     Some(x) => x,
                     None => {
-                        let source_file = runtime.source_context();
-                        let source_file = source_file.file_input().source_file();
-                        eprintln!("⚠️ {source_file:?} failed to resolve binding `{:?}`", path_key.as_str());
+                        runtime.with_source_file_path(|file| {
+                            eprintln!("⚠️ {file:?} <bind> failed to resolve binding `{:?}`", path_key.as_str());
+                        });
                         return None
                     }
                 };

@@ -1,14 +1,10 @@
 <nav aria-label="Breadcrumb">
     <ol class="breadcrumb">
-        <li>
-            <a href="../pages/index.html"><span>Home</span></a>
-        </li>
-        <li>
-            <a href="../pages/blog/index.html"><span>Blog</span></a>
-        </li>
-        <li aria-current="page">
-            <a href="./../pages/blog/performance-vs-flexibility.html"><span>Performance vs Flexibility</span></a>
-        </li>
+        <enumerate path="breadcrumbs" as="breadcrumb">
+            <li>
+                <a href="{{breadcrumb.href}}"><span><inject path="breadcrumb.title"></inject></span></a>
+            </li>
+        </enumerate>
     </ol>
 </nav>
 

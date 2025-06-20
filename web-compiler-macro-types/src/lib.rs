@@ -9,3 +9,4 @@ pub mod path_utils;
 pub mod macro_tag;
 pub mod tag_rewrite_rule;
 pub mod helpers;
+pub mod breadcrumbs;

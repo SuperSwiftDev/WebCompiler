@@ -2,6 +2,7 @@ use std::collections::HashSet;
 
 use web_compiler_io_types::IO;
 
+use crate::breadcrumbs::BreadcrumbPathListValue;
 use crate::macro_tag::MacroTagSet;
 use crate::scope::{BinderValue, BindingScope};
 use crate::context::ContextRegistry;
@@ -15,28 +16,77 @@ pub use web_compiler_io_types::Effectful;
 // TOP-DOWN CONTEXT
 // ————————————————————————————————————————————————————————————————————————————
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone)]
+pub struct HostInfo {
+    breadcrumbs: Option<BreadcrumbPathListValue>,
+    hoisted: Vec<BinderValue>,
+}
+
+impl HostInfo {
+    pub fn new(
+        breadcrumbs: Option<BreadcrumbPathListValue>,
+        hoisted: Vec<BinderValue>,
+    ) -> Self {
+        Self { breadcrumbs, hoisted }
+    }
+    pub fn breadcrumbs(&self) -> Option<&BreadcrumbPathListValue> {
+        self.breadcrumbs.as_ref()
+    }
+    pub fn hoisted(&self) -> &[BinderValue] {
+        &self.hoisted
+    }
+
+    pub fn with_chained_state(mut self, chained_state: ChainedState) -> Self {
+        self.hoisted = chained_state.hoisted;
+        self
+    }
+    pub fn with_breadcrumbs(mut self, breadcrumbs: BreadcrumbPathListValue) -> Self {
+        self.breadcrumbs = Some(breadcrumbs);
+        self
+    }
+    pub fn with_breadcrumb_opt(mut self, breadcrumbs: Option<BreadcrumbPathListValue>) -> Self {
+        self.breadcrumbs = breadcrumbs.or_else(|| self.breadcrumbs);
+        self
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct ProcessScope {
     pub binding_scope: BindingScope,
     pub context_registry: ContextRegistry,
-    chained_state: ChainedState,
+    host_info: HostInfo,
 }
 
 impl ProcessScope {
+    pub fn new(host_info: HostInfo) -> Self {
+        let breadcrumbs = host_info.breadcrumbs.clone();
+        Self {
+            binding_scope: Default::default(),
+            context_registry: Default::default(),
+            host_info,
+        }
+        .and_insert_binder_value(
+            "breadcrumbs",
+            BinderValue::json(breadcrumbs)
+        )
+    }
+    // pub fn fresh(self) -> Self {
+    //     Self::new(self.host_info)
+    // }
     pub fn with_binding_scope(mut self, binding_scope: BindingScope) -> Self {
         self.binding_scope = binding_scope;
+        self
+    }
+    pub fn and_insert_binder_value(mut self, key: impl Into<String>, value: impl Into<BinderValue>) -> Self {
+        self.binding_scope.insert(key, value);
         self
     }
     pub fn with_context_registry(mut self, context_registry: ContextRegistry) -> Self {
         self.context_registry = context_registry;
         self
     }
-    pub fn with_chained_state(mut self, chained_state: ChainedState) -> Self {
-        self.chained_state = chained_state;
-        self
-    }
-    pub fn chained_state(&self) -> &ChainedState {
-        &self.chained_state
+    pub fn host_info(&self) -> &HostInfo {
+        &self.host_info
     }
 }
 

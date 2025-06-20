@@ -1,13 +1,12 @@
-use macro_types::scope::BinderValue;
 use once_cell::sync::Lazy;
-use xml_ast::{AttributeMap, AttributeValueBuf, Node, TagBuf};
 use std::collections::HashSet;
 use std::path::PathBuf;
 
+use xml_ast::{AttributeMap, AttributeValueBuf, Node, TagBuf};
+use macro_types::scope::BinderValue;
 use macro_types::environment::{AccumulatedEffects, SourceHostRef, SourcePathResolver};
 use macro_types::helpers::srcset::SrcsetCandidate;
 use macro_types::project::{DependencyRelation, FileDependency, ResolvedDependencies, ResolvedDependencyRelation};
-
 use web_compiler_types::CompilerRuntime;
 
 // ————————————————————————————————————————————————————————————————————————————
@@ -94,21 +93,23 @@ fn process_path_if_needed(
 ) {
     // REGAULR
     if REQUIRES_REGULAR_DEPENDENCY_TRACKING.contains(&(tag.as_normalized(), &key)) {
-        let dependency = source_context.file_input().with_dependency_relation(&value);
-        let virtual_src = dependency.encode();
-        effects.dependencies.insert(dependency);
-        *value = virtual_src;
+        // let dependency = source_context.file_input().with_dependency_relation(&value);
+        // let virtual_src = dependency.encode();
+        // effects.dependencies.insert(dependency);
+        // *value = virtual_src;
+        virtualize_href(value, source_context, effects);
     }
     // SPECIAL
     else if REQUIRES_SRC_SET_DEPENDENCY_TRACKING.contains(&(tag.as_normalized(), &key)) {
         let source_sets = SrcsetCandidate::parse_srcset(value)
             .into_iter()
-            .map(|SrcsetCandidate { url, descriptor }| {
-                let dependency = source_context.file_input().with_dependency_relation(&url);
-                let virtual_src = dependency.encode();
-                effects.dependencies.insert(dependency);
+            .map(|SrcsetCandidate { mut url, descriptor }| {
+                // let dependency = source_context.file_input().with_dependency_relation(&url);
+                // let virtual_src = dependency.encode();
+                // effects.dependencies.insert(dependency);
+                virtualize_href(&mut url, source_context, effects);
                 SrcsetCandidate {
-                    url: virtual_src,
+                    url,
                     descriptor,
                 }
             })
@@ -116,6 +117,17 @@ fn process_path_if_needed(
         let rewritten_source_sets = SrcsetCandidate::format_srcset(&source_sets);
         *value = rewritten_source_sets;
     }
+}
+
+pub fn virtualize_href(
+    value: &mut String,
+    source_context: SourceHostRef,
+    effects: &mut AccumulatedEffects,
+) {
+    let dependency = source_context.file_input().with_dependency_relation(&value);
+    let virtual_src = dependency.encode();
+    effects.dependencies.insert(dependency);
+    *value = virtual_src;
 }
 
 
@@ -152,7 +164,7 @@ pub fn resolve_virtual_path_attributes(
     }
 }
 
-fn rewrite_path_mut(
+pub fn rewrite_path_mut(
     href: &mut String,
     resolver: SourcePathResolver,
     resolved_dependencies: &mut ResolvedDependencies,
@@ -165,7 +177,10 @@ fn rewrite_path_mut(
     };
     // - -
     if decoded_virtual_path.is_external_target() {
-        *href = decoded_virtual_path.to;
+        let path = decoded_virtual_path.to
+            .strip_prefix("noop://")
+            .unwrap_or(decoded_virtual_path.to.as_str());
+        *href = path.to_string();
         return
     }
     // - -
@@ -333,7 +348,7 @@ impl AttributeCommand {
 
 struct ResolvedPathExpression<'a> {
     pub expression: &'a str,
-    pub value: &'a BinderValue,
+    pub value: BinderValue,
 }
 
 impl<'a> ResolvedPathExpression<'a> {
@@ -348,33 +363,35 @@ impl<'a> ResolvedPathExpression<'a> {
                 value.strip_suffix("}}")
             })
             .and_then(|target| {
-                let result = scope.binding_scope.lookup(target);
-                if result.is_none() {
-                    let source_file = runtime.source_context();
-                    let source_file = source_file.file_input().source_file();
-                    eprintln!("⚠️ {source_file:?} failed to resolve binding `{target}`");
+                // let result = scope.binding_scope.lookup(target);
+                let path_expr = macro_types::path_expr::PathExpression::parse(target).unwrap();
+                let path_value = path_expr.evaluate(&scope.binding_scope);
+                if path_value.is_none() {
+                    runtime.with_source_file_path(|file| {
+                        eprintln!("⚠️ {file:?} `ResolvedPathExpression` failed to resolve binding `{target}`");
+                    });
                 }
                 Some(Self {
                     expression: target,
-                    value: result?,
+                    value: path_value?,
                 })
             })
     }
     pub fn try_cast_to_string(self, runtime: &'a CompilerRuntime) -> Option<String> {
         let result = self.value.try_cast_to_string();
         if result.is_none() {
-            let source_file = runtime.source_context();
-            let source_file = source_file.file_input().source_file();
-            eprintln!("⚠️ {source_file:?} failed to resolve binding `{}` as string", self.expression);
+            runtime.with_source_file_path(|file| {
+                eprintln!("⚠️ {file:?} `ResolvedPathExpression` failed to resolve binding `{}` as string", self.expression);
+            });
         }
         result.map(|x| x.to_string())
     }
     pub fn try_cast_to_boolean(self, runtime: &'a CompilerRuntime) -> Option<bool> {
         let result = self.value.try_cast_to_boolean();
         if result.is_none() {
-            let source_file = runtime.source_context();
-            let source_file = source_file.file_input().source_file();
-            eprintln!("⚠️ {source_file:?} failed to resolve binding `{}` as boolean", self.expression);
+            runtime.with_source_file_path(|file| {
+                eprintln!("⚠️ {file:?} `ResolvedPathExpression` failed to resolve binding `{}` as boolean", self.expression);
+            });
         }
         result
     }

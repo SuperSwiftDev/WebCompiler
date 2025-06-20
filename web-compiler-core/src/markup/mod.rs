@@ -4,17 +4,20 @@ pub mod macros;
 pub mod rewrites;
 
 use std::path::PathBuf;
-use macro_types::environment::{AccumulatedEffects, ProcessScope, MacroIO, SourcePathResolver, SourceHostRef};
+use macro_types::environment::{AccumulatedEffects, HostInfo, MacroIO, ProcessScope, SourceHostRef, SourcePathResolver};
+use macro_types::breadcrumbs::SiteTreeLayout;
 use macro_types::macro_tag::MacroTagSet;
 use macro_types::project::{FileInput, ProjectContext, ResolvedDependencies};
 use macro_types::scope::BinderValue;
 use macro_types::tag_rewrite_rule::TagRewriteRuleSet;
 use xml_ast::Node;
+use io_types::Effectful;
 
 pub use post::PostProcessor;
 pub use pre::{PreProcessError, PreProcessor};
 
 use web_compiler_types::{CompilerFeatureset, CompilerRuntime};
+
 
 #[derive(Clone)]
 pub struct GlobalPipelineSpec {
@@ -31,6 +34,7 @@ pub struct SourcePipeline {
     pub pipeline_spec: GlobalPipelineSpec,
     pub local_template: Option<PathBuf>,
     pub all_input_rules: Vec<FileInput>,
+    pub site_tree_layout: SiteTreeLayout,
     pub resolved_dependencies: ResolvedDependencies,
 }
 
@@ -81,8 +85,29 @@ impl SourcePipeline {
     fn execute_pre_process_phase(&self) -> Result<MacroIO<Node>, PipelineError> {
         let runtime = self.macro_runtime();
         let pre_processor = PreProcessor::new(runtime);
+        let breadcrumb_path_value = self.site_tree_layout.lookup_for(&self.file_input);
+        let (initial_effects, breadcrumb_path_value) = match breadcrumb_path_value {
+            Some(breadcrumb_path) => {
+                let breadcrumb_io =
+                    crate::data::breadcrumbs::to_breadcrumb_value_path(
+                        breadcrumb_path,
+                        &self.pipeline_spec.project,
+                    );
+                let (breadcrumb_path_value, effects) = breadcrumb_io.collapse();
+                let _ = effects; // TODO: CONSIDER THIS
+                // eprintln!(" » {:?} → {breadcrumb_path_value:#?}:\n » {effects:?}", self.file_input.source.as_path());
+                (effects, Some(breadcrumb_path_value))
+            }
+            None => {
+                ( AccumulatedEffects::default(), None )
+            },
+        };
         let content = {
-            let mut env = ProcessScope::default();
+            let host_info = HostInfo::new(
+                breadcrumb_path_value.clone(),
+                Default::default(),
+            );
+            let mut env = ProcessScope::new(host_info);
             match pre_processor.load_compile(&mut env) {
                 Ok(x) => x,
                 Err(error) => {
@@ -91,6 +116,9 @@ impl SourcePipeline {
                 }
             }
         };
+        let content = content.and_modify_context(|ctx| {
+            ctx.extend(initial_effects);
+        });
         let template_path = self.local_template
             .as_ref()
             .or_else(|| self.pipeline_spec.global_template.as_ref());
@@ -101,13 +129,14 @@ impl SourcePipeline {
         if let Some(template_input) = template_input {
             let pre_processor = pre_processor.fork(&template_input);
             let finale = content
-                .and_then_with_context(|content, ctx| {
+                .and_then_with_context(| content, ctx| {
+                    let host_info = HostInfo::new(
+                        breadcrumb_path_value,
+                        ctx.chained_state().hoisted().to_owned()
+                    );
+                    let mut env = ProcessScope::new(host_info)
+                        .and_insert_binder_value("content", BinderValue::node(content.clone()));
                     // - -
-                    let mut env = ProcessScope::default()
-                        .with_chained_state(ctx.chained_state());
-                    // - -
-                    // println!("{}")
-                    env.binding_scope.insert("content", BinderValue::node(content.clone()));
                     match pre_processor.load_compile(&mut env) {
                         Ok(x) => x,
                         Err(error) => {
@@ -119,7 +148,8 @@ impl SourcePipeline {
                 });
             return Ok(finale)
         }
-        return Ok(content)
+        // return Ok(content)
+        unimplemented!("TODO")
     }
     fn execute_post_process_phase(&mut self, processed: MacroIO<Node>) -> (Node, AccumulatedEffects) {
         let ( processed, effects ) = processed.collapse();

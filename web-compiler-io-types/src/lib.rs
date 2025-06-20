@@ -18,6 +18,16 @@ impl<Value, Effect: Effectful> IO<Value, Effect> {
         let value = apply(value);
         IO { value, effect }
     }
+    pub fn map_with_context<Result>(self, apply: impl FnOnce(Value, &Effect) -> Result) -> IO<Result, Effect> {
+        let IO { value, effect } = self;
+        let value = apply(value, &effect);
+        IO { value, effect }
+    }
+    pub fn map_with_context_mut<Result>(self, apply: impl FnOnce(Value, &mut Effect) -> Result) -> IO<Result, Effect> {
+        let IO { value, mut effect } = self;
+        let value = apply(value, &mut effect);
+        IO { value, effect }
+    }
     pub fn and_then<Result>(self, apply: impl FnOnce(Value) -> IO<Result, Effect>) -> IO<Result, Effect> {
         let IO { value, mut effect } = self;
         let IO { value, effect: effect2 } = apply(value);
@@ -27,6 +37,12 @@ impl<Value, Effect: Effectful> IO<Value, Effect> {
     pub fn and_then_with_context<Result>(self, apply: impl FnOnce(Value, &Effect) -> IO<Result, Effect>) -> IO<Result, Effect> {
         let IO { value, mut effect } = self;
         let IO { value, effect: effect2 } = apply(value, &effect);
+        effect.extend(effect2);
+        IO { value, effect }
+    }
+    pub fn and_then_with_context_mut<Result>(self, apply: impl FnOnce(Value, &mut Effect) -> IO<Result, Effect>) -> IO<Result, Effect> {
+        let IO { value, mut effect } = self;
+        let IO { value, effect: effect2 } = apply(value, &mut effect);
         effect.extend(effect2);
         IO { value, effect }
     }

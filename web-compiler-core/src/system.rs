@@ -2,8 +2,10 @@
 use std::collections::HashSet;
 
 use macro_types::environment::{Featureset, SourceHostRef};
+use macro_types::breadcrumbs::SiteTreeLayout;
 use macro_types::project::{FileInput, ProjectContext, ResolvedDependencies};
 use web_compiler_types::{CompilerFeatureset, CompilerPipeline, CompilerRuntime};
+
 
 pub fn web_publishing_compiler_featureset() -> CompilerFeatureset {
     CompilerFeatureset {
@@ -21,6 +23,11 @@ pub fn web_publishing_compiler_runtime(project: ProjectContext, source_file: Fil
 }
 
 pub fn execute_compiler_pipeline(compiler_pipeline: CompilerPipeline) {
+    let all_input_rules = compiler_pipeline.inputs.sources
+        .iter()
+        .map(|x| x.source.clone())
+        .collect::<Vec<_>>();
+    let site_tree_layout = SiteTreeLayout::compute(&all_input_rules, &compiler_pipeline.inputs.project);
     let resolved_dependencies = compiler_pipeline.inputs.sources
         .iter()
         .map(|input| {
@@ -30,16 +37,13 @@ pub fn execute_compiler_pipeline(compiler_pipeline: CompilerPipeline) {
                 project: compiler_pipeline.inputs.project.clone(),
                 global_template: compiler_pipeline.inputs.global_template.clone(),
             };
-            let all_input_rules = compiler_pipeline.inputs.sources
-                .iter()
-                .map(|x| x.source.clone())
-                .collect::<Vec<_>>();
             let mut input_pipeline = crate::markup::SourcePipeline {
                 file_input: input.source.clone(),
                 pipeline_spec: global_pipeline_spec,
                 local_template: input.local_template.clone(),
-                all_input_rules,
+                all_input_rules: all_input_rules.clone(),
                 resolved_dependencies: ResolvedDependencies::default(),
+                site_tree_layout: site_tree_layout.clone(),
             };
             input_pipeline.execute();
             input_pipeline.resolved_dependencies
