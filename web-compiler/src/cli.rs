@@ -20,6 +20,9 @@ struct BuildCli {
     /// Path to the manifest file.
     // #[arg(long)]
     pub manifest: PathBuf,
+    /// Execute a specfic target.
+    #[arg(long)]
+    pub target: Option<String>,
 }
 
 impl CommandLineInterface {
@@ -35,9 +38,13 @@ impl CommandLineInterface {
 
 impl BuildCli {
     pub fn execute(self) {
-        let manifest = crate::manifest::Manifest::load(self.manifest).unwrap();
+        let manifest = crate::manifest::Manifest::load(self.manifest)
+            .expect("web-compiler manifest file");
         manifest.navigate_to_working_dir();
-        let compiler_pipeline = manifest.to_compiler_pipeline(web_publishing_compiler_featureset());
+        let compiler_pipeline = manifest.to_compiler_pipeline(
+            self.target.as_ref(),
+            web_publishing_compiler_featureset()
+        );
         web_compiler_core::system::execute_compiler_pipeline(compiler_pipeline);
     }
 }

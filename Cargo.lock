@@ -3454,6 +3454,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "xml-ai-engine"
+version = "0.1.0"
+dependencies = [
+ "jsonschema",
+ "referencing",
+ "serde",
+ "serde_json",
+ "unindent",
+ "web-compiler-xml-ast",
+ "xml-ai-client",
+]
+
+[[package]]
 name = "xml5ever"
 version = "0.22.1"
 source = "git+https://github.com/servo/html5ever.git?rev=0b37b54#0b37b54198b4e590dae240dfd046d8857b677f37"

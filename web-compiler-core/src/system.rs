@@ -4,7 +4,7 @@ use std::collections::HashSet;
 use macro_types::environment::{Featureset, SourceHostRef};
 use macro_types::breadcrumbs::SiteTreeLayout;
 use macro_types::project::{FileInput, ProjectContext, ResolvedDependencies};
-use web_compiler_types::{CompilerFeatureset, CompilerPipeline, CompilerRuntime};
+use web_compiler_types::{CompilationMode, CompilerFeatureset, CompilerPipeline, CompilerRuntime};
 
 use crate::markup::OutputWriterMode;
 
@@ -25,6 +25,7 @@ pub fn web_publishing_compiler_runtime(project: ProjectContext, source_file: Fil
 }
 
 pub fn execute_compiler_pipeline(compiler_pipeline: CompilerPipeline) {
+    let compilation_mode = compiler_pipeline.inputs.compilation_mode;
     let all_input_rules = compiler_pipeline.inputs.sources
         .iter()
         .map(|x| x.source.clone())
@@ -34,6 +35,7 @@ pub fn execute_compiler_pipeline(compiler_pipeline: CompilerPipeline) {
         .iter()
         .map(|input| {
             let global_pipeline_spec = crate::markup::GlobalPipelineSpec {
+                compilation_mode: compiler_pipeline.inputs.compilation_mode,
                 macros: compiler_pipeline.featureset.macros().to_owned(),
                 rules: compiler_pipeline.featureset.rules().to_owned(),
                 project: compiler_pipeline.inputs.project.clone(),
@@ -82,12 +84,12 @@ pub fn execute_compiler_pipeline(compiler_pipeline: CompilerPipeline) {
             x.source.extension() == Some("css".as_ref())
         });
     // println!("css_files: {css_files:#?}");
-    compile_css(&css_files, &compiler_pipeline.inputs.project);
+    compile_css(&css_files, &compiler_pipeline.inputs.project, compilation_mode);
     // println!("remaining: {remaining:#?}");
-    emit_assets(&remaining, &compiler_pipeline.inputs.project);
+    emit_assets(&remaining, &compiler_pipeline.inputs.project, compilation_mode);
 }
 
-fn compile_css(css_files: &[FileInput], project_context: &ProjectContext) {
+fn compile_css(css_files: &[FileInput], project_context: &ProjectContext, compilation_mode: CompilationMode) {
     // let mut resolved_dependencies = ResolvedDependencies::default();
     for css_file in css_files {
         let css_source = css_file.load_source_file();
@@ -115,7 +117,9 @@ fn compile_css(css_files: &[FileInput], project_context: &ProjectContext) {
             source_file: css_file.source_file(),
             contents: post_processed.value.as_bytes(),
         };
-        if is_modified {
+        if compilation_mode.is_production() {
+            crate::common::path_utils::write_output_file_smart(output_path.as_path(), post_processed.value.as_bytes());
+        } else if is_modified  {
             write_or_symlink_output.execute();
         } else {
             write_or_symlink_output.write_symlink().unwrap_or_else(|_| {
@@ -125,19 +129,24 @@ fn compile_css(css_files: &[FileInput], project_context: &ProjectContext) {
     }
 }
 
-fn emit_assets(asset_files: &[FileInput], project_context: &ProjectContext) {
+fn emit_assets(asset_files: &[FileInput], project_context: &ProjectContext, compilation_mode: CompilationMode) {
     for asset_file in asset_files {
         let source_file = asset_file.source_file();
         let output_path = asset_file.to_output_file_path(project_context);
-        let status = crate::common::symlink::create_relative_symlink(source_file, &output_path);
-        match status {
-            Ok(status) => {
-                if status.is_updated() {
-                    println!("> linking {:?} ⬌ {:?}", source_file, output_path);
+        if compilation_mode.is_production() {
+            let output_data = std::fs::read(source_file).unwrap();
+            crate::common::path_utils::write_output_file_smart(&output_path, output_data);
+        } else {
+            let status = crate::common::symlink::create_relative_symlink(source_file, &output_path);
+            match status {
+                Ok(status) => {
+                    if status.is_updated() {
+                        println!("> linking {:?} ⬌ {:?}", source_file, output_path);
+                    }
                 }
-            }
-            Err(error) => {
-                eprintln!("Failed to create symlink {:?} → {:?}: {error}", source_file, output_path);
+                Err(error) => {
+                    eprintln!("Failed to create symlink {:?} → {:?}: {error}", source_file, output_path);
+                }
             }
         }
     }

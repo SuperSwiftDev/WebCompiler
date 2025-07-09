@@ -1,4 +1,7 @@
-use std::{fmt::Debug, ops::Not, rc::Rc, str::FromStr};
+use std::{ops::Not, rc::Rc, str::FromStr};
+
+pub mod attribute_types;
+
 
 // ————————————————————————————————————————————————————————————————————————————
 // CONTEXT
@@ -11,7 +14,7 @@ use std::{fmt::Debug, ops::Not, rc::Rc, str::FromStr};
 // ERROR HANDLING
 // ————————————————————————————————————————————————————————————————————————————
 
-pub trait DslFormatError: std::error::Error + Debug {
+pub trait DslFormatError: std::error::Error + std::fmt::Debug {
     fn singleton(&self) -> DslFormatErrorList;
 }
 
@@ -167,6 +170,22 @@ impl DslFormatError for InvalidMessageAttributes {
     fn singleton(&self) -> DslFormatErrorList { DslFormatErrorList::new(Rc::new(self.clone())) }
 }
 
+// ————————————————————————————————————————————————————————————————————————————
+// MESSAGE CONTENT NODE
+// ————————————————————————————————————————————————————————————————————————————
+
+#[derive(Debug, Clone)]
+pub enum ContentNode {
+    Text(String),
+}
+
+impl ContentNode {
+    pub fn text_contents(&self) -> String {
+        match self {
+            Self::Text(text) => text.to_owned(),
+        }
+    }
+}
 
 // ————————————————————————————————————————————————————————————————————————————
 // MESSAGE CONTENT
@@ -306,6 +325,17 @@ impl DslFormatError for InvalidMessageBreakpoint {
 #[derive(Debug, Clone)]
 pub struct PromptAttributes {
     pub name: String,
+    pub model: Option<attribute_types::Model>,
+    pub stream: Option<attribute_types::Stream>,
+    pub temperature: Option<attribute_types::Temperature>,
+    pub n: Option<attribute_types::N>,
+    pub max_tokens: Option<attribute_types::MaxTokens>,
+    pub top_p: Option<attribute_types::TopP>,
+    pub frequency_penalty: Option<attribute_types::FrequencyPenalty>,
+    pub presence_penalty: Option<attribute_types::PresencePenalty>,
+    pub logprobs: Option<attribute_types::Logprobs>,
+    pub top_logprobs: Option<attribute_types::TopLogprobs>,
+    pub response_format: Option<attribute_types::ResponseFormat>,
 }
 
 impl PromptAttributes {
@@ -313,17 +343,202 @@ impl PromptAttributes {
         let name = attributes
             .get("name")
             .map(|x| x.as_str().to_string())
-            .ok_or_else(|| InvalidPromptAttributes)?;
-        Ok(Self { name })
+            .ok_or_else(|| InvalidPromptAttributes::MissingName)?;
+
+        let model= attributes
+            .get("model")
+            .map(|x| {
+                attribute_types::Model::from_str(x.as_str())
+            });
+        let stream= attributes
+            .get("stream")
+            .map(|x| {
+                attribute_types::Stream::from_str(x.as_str())
+            });
+        let temperature= attributes
+            .get("temperature")
+            .map(|x| {
+                attribute_types::Temperature::from_str(x.as_str())
+            });
+        let n= attributes
+            .get("n")
+            .map(|x| {
+                attribute_types::N::from_str(x.as_str())
+            });
+        let max_tokens= attributes
+            .get("max-tokens")
+            .map(|x| {
+                attribute_types::MaxTokens::from_str(x.as_str())
+            });
+        let top_p= attributes
+            .get("top-p")
+            .map(|x| {
+                attribute_types::TopP::from_str(x.as_str())
+            });
+        let frequency_penalty= attributes
+            .get("frequency-penalty")
+            .map(|x| {
+                attribute_types::FrequencyPenalty::from_str(x.as_str())
+            });
+        let presence_penalty= attributes
+            .get("presence-penalty")
+            .map(|x| {
+                attribute_types::PresencePenalty::from_str(x.as_str())
+            });
+        let logprobs= attributes
+            .get("logprobs")
+            .map(|x| {
+                attribute_types::Logprobs::from_str(x.as_str())
+            });
+        let top_logprobs= attributes
+            .get("top-logprobs")
+            .map(|x| {
+                attribute_types::TopLogprobs::from_str(x.as_str())
+            });
+        let response_format= attributes
+            .get("response-format")
+            .map(|x| {
+                attribute_types::ResponseFormat::from_str(x.as_str())
+            });
+        
+        let model = match model {
+            None => None,
+            Some(x) => Some({
+                x.map_err(|x| {
+                    InvalidPromptAttributes::InvalidModelAttribute(x)
+                })?
+            }),
+        };
+        let stream = match stream {
+            None => None,
+            Some(x) => Some({
+                x.map_err(|x| {
+                    InvalidPromptAttributes::InvalidStreamAttribute(x)
+                })?
+            }),
+        };
+        let temperature = match temperature {
+            None => None,
+            Some(x) => Some({
+                x.map_err(|x| {
+                    InvalidPromptAttributes::InvalidTemperatureAttribute(x)
+                })?
+            }),
+        };
+        let n = match n {
+            None => None,
+            Some(x) => Some({
+                x.map_err(|x| {
+                    InvalidPromptAttributes::InvalidNAttribute(x)
+                })?
+            }),
+        };
+        let max_tokens = match max_tokens {
+            None => None,
+            Some(x) => Some({
+                x.map_err(|x| {
+                    InvalidPromptAttributes::InvalidMaxTokensAttribute(x)
+                })?
+            }),
+        };
+        let top_p = match top_p {
+            None => None,
+            Some(x) => Some({
+                x.map_err(|x| {
+                    InvalidPromptAttributes::InvalidTopPAttribute(x)
+                })?
+            }),
+        };
+        let frequency_penalty = match frequency_penalty {
+            None => None,
+            Some(x) => Some({
+                x.map_err(|x| {
+                    InvalidPromptAttributes::InvalidFrequencyPenaltyAttribute(x)
+                })?
+            }),
+        };
+        let presence_penalty = match presence_penalty {
+            None => None,
+            Some(x) => Some({
+                x.map_err(|x| {
+                    InvalidPromptAttributes::InvalidPresencePenaltyAttribute(x)
+                })?
+            }),
+        };
+        let logprobs = match logprobs {
+            None => None,
+            Some(x) => Some({
+                x.map_err(|x| {
+                    InvalidPromptAttributes::InvalidLogprobsAttribute(x)
+                })?
+            }),
+        };
+        let top_logprobs = match top_logprobs {
+            None => None,
+            Some(x) => Some({
+                x.map_err(|x| {
+                    InvalidPromptAttributes::InvalidTopLogprobsAttribute(x)
+                })?
+            }),
+        };
+        let response_format = match response_format {
+            None => None,
+            Some(x) => Some({
+                x.map_err(|x| {
+                    InvalidPromptAttributes::InvalidResponseFormatAttribute(x)
+                })?
+            }),
+        };
+
+        Ok(Self {
+            name,
+            model,
+            stream,
+            temperature,
+            n,
+            max_tokens,
+            top_p,
+            frequency_penalty,
+            presence_penalty,
+            logprobs,
+            top_logprobs,
+            response_format,
+        })
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct InvalidPromptAttributes;
+pub enum InvalidPromptAttributes {
+    MissingName,
+    InvalidModelAttribute(attribute_types::InvalidModelAttribute),
+    InvalidStreamAttribute(attribute_types::InvalidStreamAttribute),
+    InvalidTemperatureAttribute(attribute_types::InvalidTemperatureAttribute),
+    InvalidNAttribute(attribute_types::InvalidNAttribute),
+    InvalidMaxTokensAttribute(attribute_types::InvalidMaxTokensAttribute),
+    InvalidTopPAttribute(attribute_types::InvalidTopPAttribute),
+    InvalidFrequencyPenaltyAttribute(attribute_types::InvalidFrequencyPenaltyAttribute),
+    InvalidPresencePenaltyAttribute(attribute_types::InvalidPresencePenaltyAttribute),
+    InvalidLogprobsAttribute(attribute_types::InvalidLogprobsAttribute),
+    InvalidTopLogprobsAttribute(attribute_types::InvalidTopLogprobsAttribute),
+    InvalidResponseFormatAttribute(attribute_types::InvalidResponseFormatAttribute),
+}
 
 impl std::fmt::Display for InvalidPromptAttributes {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "invalid prompt attributes")
+        match self {
+            Self::MissingName => write!(f, "missing prompt name"),
+            Self::InvalidModelAttribute(x) => x.fmt(f),
+            Self::InvalidStreamAttribute(x) => x.fmt(f),
+            Self::InvalidTemperatureAttribute(x) => x.fmt(f),
+            Self::InvalidNAttribute(x) => x.fmt(f),
+            Self::InvalidMaxTokensAttribute(x) => x.fmt(f),
+            Self::InvalidTopPAttribute(x) => x.fmt(f),
+            Self::InvalidFrequencyPenaltyAttribute(x) => x.fmt(f),
+            Self::InvalidPresencePenaltyAttribute(x) => x.fmt(f),
+            Self::InvalidLogprobsAttribute(x) => x.fmt(f),
+            Self::InvalidTopLogprobsAttribute(x) => x.fmt(f),
+            Self::InvalidResponseFormatAttribute(x) => x.fmt(f),
+        }
     }
 }
 

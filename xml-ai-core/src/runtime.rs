@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use crate::dsl::{Document, MessageBreakpointElement, MessageContent, MessageElement, PromptChild, PromptElement, Role};
+use crate::frontend_ast::{Document, MessageBreakpointElement, MessageContent, MessageElement, PromptChild, PromptElement, Role};
 use serde::{Deserialize, Serialize};
 use xml_ai_client::request::Message;
 
@@ -29,23 +29,26 @@ async fn invoke(messages: &[Message]) -> String {
 }
 
 // ————————————————————————————————————————————————————————————————————————————
-// DATA MODEL
+// DATA MODEL — SETTINGS
 // ————————————————————————————————————————————————————————————————————————————
 
 #[derive(Debug, Clone)]
-pub enum DocumentTarget {
-    PromptName(String),
+pub struct TargetPrompt {
+    pub name: String,
 }
 
-impl DocumentTarget {
-    pub fn matches_prompt_element(&self, prompt: &PromptElement) -> bool {
-        match self {
-            Self::PromptName(name) => {
-                name == prompt.attributes.name.as_str()
-            }
-        }
-    }
+#[derive(Debug, Clone)]
+pub struct DocumentEvaluationSetting {
+    pub target_prompt: TargetPrompt,
 }
+
+// impl DocumentEvaluationSetting {
+//     pub fn new()
+// }
+
+// ————————————————————————————————————————————————————————————————————————————
+// DATA MODEL
+// ————————————————————————————————————————————————————————————————————————————
 
 impl Document {
     pub async fn evaluate(&self, prompt_name: impl AsRef<str>) -> CompletedPrompt {
@@ -88,10 +91,19 @@ impl PromptContext {
         }
     }
     async fn push_message_element(&mut self, message: &MessageElement) {
+        let content = message.content.to_string();
+        let content = unindent::unindent(&content);
+        let content = content.trim().to_string();
         match message.attributes.role {
-            Role::System => self.history.push(Message::system(message.content.to_string())),
-            Role::User => self.history.push(Message::user(message.content.to_string())),
-            Role::Assistant => self.history.push(Message::assistant(message.content.to_string())),
+            Role::System => {
+                self.history.push(Message::system(content))
+            }
+            Role::User => {
+                self.history.push(Message::user(content))
+            }
+            Role::Assistant => {
+                self.history.push(Message::assistant(content))
+            }
         }
     }
     async fn finalize(self) -> CompletedPrompt {

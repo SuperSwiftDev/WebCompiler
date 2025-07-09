@@ -16,11 +16,12 @@ use io_types::Effectful;
 pub use post::PostProcessor;
 pub use pre::{PreProcessError, PreProcessor};
 
-use web_compiler_types::{CompilerFeatureset, CompilerRuntime};
+use web_compiler_types::{CompilationMode, CompilerFeatureset, CompilerRuntime};
 
 
 #[derive(Clone)]
 pub struct GlobalPipelineSpec {
+    pub compilation_mode: CompilationMode,
     pub macros: MacroTagSet<CompilerRuntime>,
     pub rules: TagRewriteRuleSet<CompilerRuntime>,
     pub project: ProjectContext,

@@ -31,6 +31,10 @@ impl SiteTreeLayout {
         for input in input_rules {
             if !title_map.contains_key(input.source_file()) {
                 let title = get_title(input);
+                let title = match title {
+                    Some(x) => x,
+                    None => continue
+                };
                 title_map.insert(input.source.clone(), title);
             }
         }
@@ -88,17 +92,19 @@ pub struct SystemBreadcrumbComponent {
     pub title: String,
 }
 
-fn get_title(file_input: &FileInput) -> String {
+fn get_title(file_input: &FileInput) -> Option<String> {
     let source = file_input.load_source_file().unwrap();
     let source_tree = {
         let output = xml_ast::parse_str_auto(&source);
         if !output.errors.is_empty() {
-            unimplemented!("TODO");
+            let errors = output.errors.join("\n");
+            eprintln!("TODO: {errors}");
+            return None
         }
         output.output
     };
     let target_tag = TagBuf::from("define-title");
-    let title = source_tree.find_first(&target_tag).unwrap();
+    let title = source_tree.find_first(&target_tag).expect("expecting define-title tag");
     let title = title.as_element().unwrap();
     let body_text = title.text_contents().join("");
     let body_text = body_text.trim().to_string();
@@ -106,7 +112,7 @@ fn get_title(file_input: &FileInput) -> String {
         .get("page")
         .or_else(|| title.attributes.get("bind:title"))
         .map(|x| x.as_str().to_string());
-    override_value.unwrap_or(body_text)
+    Some(override_value.unwrap_or(body_text))
 }
 
 

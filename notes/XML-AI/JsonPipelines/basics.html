@@ -1,0 +1,46 @@
+<schema src="./schema-1.json" id="schema-1"></schema>
+
+<prompt name="fix-json-object" input:schema="of type Schema" input:json-value="of type String">
+    <set response-format="json-object"></set>
+    <msg role="system">
+        <p>You previously returned invalid JSON that does not conform to the expected schema.</p>
+        <p>Your task is to fix the syntax and ensure the structure matches the schema exactly.</p>
+        <p>⚠️ Only return the **corrected JSON data** — do not include the schema, explanation, or any additional text.</p>
+    </msg>
+    <msg role="user">
+        <p>Here is the malformed JSON:</p>
+        <p from="json-value" format="pretty"></p>
+    </msg>
+
+    <msg role="user">
+        <p>Here is the expected JSON schema:</p>
+        <p from="schema" format="pretty"></p>
+    </msg>
+</prompt>
+
+
+
+<prompt name="generate-user-profile" input:schema="of type Schema" input:json-value="of type String">
+    <set response-format="json-object"></set>
+    
+    <msg role="system">
+        <p>You are a strict JSON generator. Only return a JSON object conforming to the schema below.</p>
+    </msg>
+
+    <msg role="user">
+        <p>Create a user profile for a new user named Sarah. Include her name, age, and whether she is a
+        premium member.</p>
+    </msg>
+
+    <msg role="user">
+        <p>Here is the JSON schema:</p>
+        <p from="schema" format="pretty"></p>
+    </msg>
+
+    <breakpoint
+        type="msg"
+        role="assistant"
+        verification="schema">
+    </breakpoint>
+</prompt>
+

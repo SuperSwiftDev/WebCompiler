@@ -13,7 +13,34 @@ pub struct CompilerInputRule {
     pub local_template: Option<PathBuf>,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum CompilationMode {
+    Dev, Production
+}
+
+impl Default for CompilationMode {
+    fn default() -> Self {
+        CompilationMode::Dev
+    }
+}
+
+impl CompilationMode {
+    pub fn is_dev(&self) -> bool {
+        match self {
+            Self::Dev => true,
+            _ => false,
+        }
+    }
+    pub fn is_production(&self) -> bool {
+        match self {
+            Self::Production => true,
+            _ => false,
+        }
+    }
+}
+
 pub struct CompilerInputs {
+    pub compilation_mode: CompilationMode,
     pub global_template: Option<PathBuf>,
     pub sources: Vec<CompilerInputRule>,
     pub project: ProjectContext,

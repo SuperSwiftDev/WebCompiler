@@ -1,0 +1,35 @@
+<prompt name="fix-user-profile-json">
+  <message role="system">
+You previously returned invalid JSON that does not conform to the expected schema.
+
+Your task is to fix the syntax and ensure the structure matches the schema exactly.
+
+⚠️ Only return the **corrected JSON data** — do not include the schema, explanation, or any additional text.
+  </message>
+
+  <message role="user">
+Here is the malformed JSON:
+
+{
+  "name": 42,
+  "age": "twenty-nine",
+  "isPremium": "yes"
+  // missing closing brace
+  </message>
+
+  <message role="user">
+Here is the expected JSON schema:
+
+{
+  "type": "object",
+  "required": ["name", "age", "isPremium"],
+  "properties": {
+    "name": { "type": "string" },
+    "age": { "type": "integer" },
+    "isPremium": { "type": "boolean" }
+  }
+}
+  </message>
+
+  <message-breakpoint role="assistant"></message-breakpoint>
+</prompt>

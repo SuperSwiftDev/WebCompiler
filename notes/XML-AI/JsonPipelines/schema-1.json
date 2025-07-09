@@ -1,0 +1,9 @@
+{
+    "type": "object",
+    "required": [ "name", "age", "isPremium" ],
+    "properties": {
+        "name": { "type": "string" },
+        "age": { "type": "integer" },
+        "isPremium": { "type": "boolean" }
+    }
+}
