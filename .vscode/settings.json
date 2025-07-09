@@ -10,7 +10,8 @@
     ],
     "cSpell.enabledFileTypes": {
         "toml": false,
-        "rust": false
+        "rust": false,
+        "markdown": true
     },
     "cSpell.words": [
         "desugars",

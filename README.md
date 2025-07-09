@@ -6,6 +6,12 @@ A static-site compiler that treats HTML like code — composable, inspectable, a
 
 This is the spiritual successor to [Subscript HTML](https://github.com/subscript-publishing/subscript-html), originally built for publishing academic notes with embedded math, graphs, and textbook-style structure — now re-imagined as a general-purpose static site compiler.
 
+# Real World Example
+
+My site at [colbyn.com](https://colbyn.com) is now build with `web-compiler` using GitHub pages!
+
+You may see the [source code over here](https://github.com/colbyn/ColbynDotCom) for a real-world example setup.
+
 ---
 
 ## ✨ Highlights
