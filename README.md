@@ -1,12 +1,8 @@
-# Note
-
-Working on the next version at [SuperSwiftDev/WebCompiler/tree/next](https://github.com/SuperSwiftDev/WebCompiler/tree/next).
-
 # Web Compiler
 
 A static-site compiler that treats HTML like code — composable, inspectable, and compiled with full semantic context.
 
-**Web Compiler** is designed for developers, document authors, and small digital teams who want full control over their markup without the rigidity of CMSs, the noise of Markdown-based SSGs, or the overhead of JS frameworks.
+**Web Compiler** is designed for developers who want full control over their static sites without the rigidity of CMSs, the noise of Markdown-based SSGs, or the overhead of JS frameworks.
 
 This is the spiritual successor to [Subscript HTML](https://github.com/subscript-publishing/subscript-html), originally built for publishing academic notes with embedded math, graphs, and textbook-style structure — now re-imagined as a general-purpose static site compiler.
 
@@ -19,39 +15,6 @@ This is the spiritual successor to [Subscript HTML](https://github.com/subscript
 * **Compile-time macros** — Use tags like `<bind>`, `<enumerate>`, `<value>`, and `<content>` to define reusable components with no runtime cost.
 * **Template wrapping** — Global templates like `base.html` or `blog-post.html` are applied automatically, with content projection via `<content>`.
 * **Bottom-up evaluation** — The compiler processes content fragments before wrapping them, ensuring accurate link resolution, TOC generation, and macro expansion.
-
----
-
-## 📁 Repository Layout
-
-```
-.
-├── web-compiler/           # Binary entrypoint for compilation
-├── web-compiler-core/      # Transformation engine (pre/post processing, macro logic)
-├── web-compiler-common/    # Shared utilities (symlinks, path resolution, vpath encoding)
-├── web-compiler-html-ast/  # HTML parsing, stringification, traversal engine
-├── demos/                  # Example projects (basic/, advance/)
-├── schema/                 # JSON schemas for macro tags (for editor support)
-├── scripts/                # CLI, test, and formatting utilities
-└── Cargo.toml              # Top-level workspace manifest
-```
-
----
-
-## 🧪 Getting Started
-
-Run the basic demo:
-
-```bash
-cd demos/basic
-cargo run --bin web-compiler run
-./scripts/serve.sh
-./scripts/open.sh
-```
-
-This builds the site using `web-compiler.toml`, wrapping fragments in a shared layout and compiling the output to `/output`.
-
-Then open `http://127.0.0.1:8001` in your browser.
 
 ---
 
@@ -132,9 +95,3 @@ Web Compiler improves on these by offering:
 * Custom macro expansion passes
 * Compile-time template injection
 * Resolved link correctness by design
-
----
-
-## 📄 License
-
-MIT License. See [LICENSE](./LICENSE).
