@@ -181,7 +181,8 @@ impl SourcePipeline {
         let mut post_processor = PostProcessor::new(
             &self.pipeline_spec.rules,
             path_resolver,
-            &mut resolved_dependencies
+            &mut resolved_dependencies,
+            self.source_context().clone(),
         );
         let finalized = post_processor.apply(processed);
         // println!("path_resolver: {path_resolver:#?}");

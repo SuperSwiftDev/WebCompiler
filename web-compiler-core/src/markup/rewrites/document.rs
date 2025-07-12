@@ -1,5 +1,5 @@
 // use macro_types::environment::MacroRuntime;
-use macro_types::environment::{ProcessScope, MacroIO};
+use macro_types::environment::{MacroIO, ProcessScope, SourceHostRef};
 use macro_types::tag_rewrite_rule::TagRewriteRule;
 use xml_ast::{Element, Node};
 
@@ -26,7 +26,7 @@ impl TagRewriteRule for DocumentHead {
             .with_children(children);
         MacroIO::wrap(Node::Element(element))
     }
-    fn post_process(&self, element: Element) -> Node {
+    fn post_process(&self, element: Element, _: &SourceHostRef) -> Node {
         Node::Element(element)
     }
 }
@@ -52,7 +52,7 @@ impl TagRewriteRule for DocumentBody {
             .with_children(children);
         MacroIO::wrap(Node::Element(element))
     }
-    fn post_process(&self, element: Element) -> Node {
+    fn post_process(&self, element: Element, _: &SourceHostRef) -> Node {
         Node::Element(element)
     }
 }
@@ -79,7 +79,7 @@ impl TagRewriteRule for Document {
             .with_children(children);
         MacroIO::wrap(Node::Element(element))
     }
-    fn post_process(&self, element: Element) -> Node {
+    fn post_process(&self, element: Element, _: &SourceHostRef) -> Node {
         Node::Element(element)
     }
 }

@@ -1,4 +1,4 @@
-use macro_types::{environment::SourcePathResolver, tag_rewrite_rule::TagRewriteRuleSet};
+use macro_types::{environment::{SourceHostRef, SourcePathResolver}, tag_rewrite_rule::TagRewriteRuleSet};
 use xml_ast::{traversal::ElementVisitor, Element, Node};
 
 use crate::macro_types::project::ResolvedDependencies;
@@ -8,6 +8,7 @@ pub struct PostProcessor<'a> {
     pub rules: &'a TagRewriteRuleSet<CompilerRuntime>,
     pub path_resolver: SourcePathResolver<'a>,
     pub resolved_dependencies: &'a mut ResolvedDependencies,
+    pub source_host: SourceHostRef<'a>,
 }
 
 impl<'a> PostProcessor<'a> {
@@ -15,8 +16,9 @@ impl<'a> PostProcessor<'a> {
         rules: &'a TagRewriteRuleSet<CompilerRuntime>,
         path_resolver: SourcePathResolver<'a>,
         resolved_dependencies: &'a mut ResolvedDependencies,
+        source_host: SourceHostRef<'a>,
     ) -> Self {
-        Self { rules, path_resolver, resolved_dependencies }
+        Self { rules, path_resolver, resolved_dependencies, source_host }
     }
     pub fn apply(&mut self, node: Node) -> Node {
         xml_ast::traversal::apply_element_visitor(node, self)
@@ -36,6 +38,6 @@ impl<'a> ElementVisitor for PostProcessor<'a> {
             self.path_resolver,
             &mut self.resolved_dependencies,
         );
-        self.rules.try_apply_post_processors(Element { tag, attributes, children })
+        self.rules.try_apply_post_processors(Element { tag, attributes, children }, &self.source_host)
     }
 }

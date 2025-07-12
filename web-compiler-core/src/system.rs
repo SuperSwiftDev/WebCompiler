@@ -78,18 +78,18 @@ pub fn execute_compiler_pipeline(compiler_pipeline: CompilerPipeline) {
         .map(|x| x.cleaned())
         .collect::<HashSet<_>>();
     // println!("remaining: {remaining:#?}");
-    let (css_files, remaining) = remaining
+    let (css_files, mut remaining) = remaining
         .into_iter()
         .partition::<Vec<_>, _>(|x| {
             x.source.extension() == Some("css".as_ref())
         });
     // println!("css_files: {css_files:#?}");
-    compile_css(&css_files, &compiler_pipeline.inputs.project, compilation_mode);
+    compile_css(&css_files, &compiler_pipeline.inputs.project, compilation_mode, &mut remaining);
     // println!("remaining: {remaining:#?}");
     emit_assets(&remaining, &compiler_pipeline.inputs.project, compilation_mode);
 }
 
-fn compile_css(css_files: &[FileInput], project_context: &ProjectContext, compilation_mode: CompilationMode) {
+fn compile_css(css_files: &[FileInput], project_context: &ProjectContext, compilation_mode: CompilationMode, remaining: &mut Vec<FileInput>) {
     // let mut resolved_dependencies = ResolvedDependencies::default();
     for css_file in css_files {
         let css_source = css_file.load_source_file();
@@ -105,10 +105,20 @@ fn compile_css(css_files: &[FileInput], project_context: &ProjectContext, compil
             file_input: css_file,
         };
         let css_preprocessor = css::CssPreprocessor::new(source_context);
-        let environment = &();
-        let css_postprocessor = css::CssPostprocessor::new(environment);
+        // let environment = &();
+        let css_postprocessor = css::CssPostprocessor::new(source_context);
         let ( pre_processed, effects ) = css_preprocessor.execute(&css_source).collapse();
-        let _ = effects; // TODO
+        // let _ = effects; // TODO
+        let assets = effects.dependencies
+            .iter()
+            .filter(|x| !x.is_external_target())
+            .map(|x| x.as_file_dependency());
+        for asset in assets {
+            remaining.push(FileInput {
+                source: asset.resolved_target_path(),
+                public: None,
+            });
+        }
         let post_processed = css_postprocessor.execute(&pre_processed.value);
         let output_path = css_file.to_output_file_path(project_context);
         let is_modified = pre_processed.modified.union(post_processed.modified).is_modified();

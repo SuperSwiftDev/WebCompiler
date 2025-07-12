@@ -3032,6 +3032,8 @@ name = "web-compiler-css"
 version = "0.1.0"
 dependencies = [
  "lightningcss",
+ "path-clean",
+ "pathdiff",
  "web-compiler-io-types",
  "web-compiler-macro-types",
 ]

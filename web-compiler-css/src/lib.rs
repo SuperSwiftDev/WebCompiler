@@ -136,19 +136,21 @@ impl<'a, 'i> Visitor<'i> for CssPreprocessorVisitor<'a> {
 
 pub struct CssPostprocessor<'a> {
     modified: ModifiedFlag,
-    environment: &'a (),
+    // environment: &'a (),
+    source_host: SourceHostRef<'a>,
 }
 
 impl<'a> CssPostprocessor<'a> {
-    pub fn new(environment: &'a ()) -> Self {
-        Self { environment, modified: ModifiedFlag::default() }
+    pub fn new(source_host: SourceHostRef<'a>) -> Self {
+        Self { source_host, modified: ModifiedFlag::default() }
     }
     pub fn execute(mut self, source_code: &str) -> Payload<String> {
         let mut stylesheet = StyleSheet::parse(source_code, ParserOptions::default()).unwrap();
         
         let mut visitor = CssPostprocessorVisitor {
-            environment: self.environment,
+            // environment: self.environment,
             modified: &mut self.modified,
+            source_host: self.source_host,
         };
         
         stylesheet.visit(&mut visitor ).unwrap();
@@ -172,18 +174,18 @@ impl<'a> CssPostprocessor<'a> {
 #[allow(unused)]
 struct CssPostprocessorVisitor<'a> {
     // resolver_environment: ResolverTarget<'a>,
-    environment: &'a (),
+    // source_file: File
+    // environment: &'a (),
+    source_host: SourceHostRef<'a>,
     // source: SourceHostRef<'a>,
     modified: &'a mut ModifiedFlag,
 }
 
 impl<'a, 'i> Visitor<'i> for CssPostprocessorVisitor<'a> {
     type Error = Infallible;
-
     fn visit_types(&self) -> VisitTypes {
         visit_types!(URLS)
     }
-
     fn visit_url(&mut self, url: &mut Url<'i>) -> Result<(), Self::Error> {
         let url_string = url.url.to_string();
         let decoded_virtual_path = DependencyRelation::decode(&url_string);
@@ -196,20 +198,16 @@ impl<'a, 'i> Visitor<'i> for CssPostprocessorVisitor<'a> {
         if decoded_virtual_path.is_external_target() {
             return Ok(())
         }
-        let decoded_url = {
-            decoded_virtual_path
-                .as_file_dependency()
-                .resolved_target_path()
-                .to_str()
-                .to_owned()
-                .unwrap_or(decoded_virtual_path.to.as_str())
-                .to_string()
-        };
-        if url.url.to_string() == decoded_url {
-            return Ok(())
-        }
+        let file_dependency = decoded_virtual_path.as_file_dependency();
+        let decoded_path = file_dependency.resolved_target_path();
+        let source_host = file_dependency.from.parent().unwrap();
+        let decoded_path = path_clean::clean(decoded_path);
+        let relative = pathdiff::diff_paths(
+            &decoded_path,
+            source_host
+        ).unwrap();
         self.modified.mark_modified_mut();
-        url.url = decoded_url.clone().into();
+        url.url = relative.to_str().unwrap().to_owned().into();
         Ok(())
     }
 }

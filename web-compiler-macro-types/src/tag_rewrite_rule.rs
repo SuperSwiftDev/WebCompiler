@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use xml_ast::{Element, Node};
 
-use crate::environment::{ProcessScope, MacroIO, Featureset};
+use crate::environment::{Featureset, MacroIO, ProcessScope, SourceHostRef};
 
 /// Applied during the bottom-up traversal phase.
 pub trait TagRewriteRule {
@@ -18,6 +18,7 @@ pub trait TagRewriteRule {
     fn post_process(
         &self,
         element: Element,
+        source_host_ref: &SourceHostRef,
     ) -> Node;
 }
 
@@ -56,11 +57,11 @@ impl<Runtime: Featureset> TagRewriteRuleSet<Runtime> {
         }
         MacroIO::wrap(Node::Element(element))
     }
-    pub fn try_apply_post_processors( &self, element: Element) -> Node {
+    pub fn try_apply_post_processors( &self, element: Element, source_host_ref: &SourceHostRef) -> Node {
         let element_tag_str = element.tag.as_normalized();
         if self.supported_tags.contains(element_tag_str) {
             if let Some(macro_tag) = self.macros.get(element_tag_str) {
-                return macro_tag.post_process(element)
+                return macro_tag.post_process(element, source_host_ref)
             }
         }
         Node::Element(element)

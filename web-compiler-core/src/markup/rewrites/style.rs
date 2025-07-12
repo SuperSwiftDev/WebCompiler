@@ -1,5 +1,5 @@
 // use macro_types::environment::MacroRuntime;
-use macro_types::environment::{ProcessScope, MacroIO};
+use macro_types::environment::{MacroIO, ProcessScope, SourceHostRef};
 use macro_types::tag_rewrite_rule::TagRewriteRule;
 use xml_ast::{Element, Fragment, Node};
 
@@ -37,12 +37,13 @@ impl TagRewriteRule for StyleMacroTag {
                 })
             })
     }
-    fn post_process(&self, element: Element) -> Node {
+    fn post_process(&self, element: Element, source_host_ref: &SourceHostRef) -> Node {
         let Element { tag, attributes, children } = element;
         let text_contents = children
             .text_contents()
             .join("");
-        let css_post_processor = CssPostprocessor::new(&());
+        // let source_context = self.
+        let css_post_processor = CssPostprocessor::new(source_host_ref.clone());
         let result = css_post_processor.execute(&text_contents);
         let children = Fragment::from_nodes(vec![Node::text(result.value)]);
         Node::element(tag, attributes, children)
