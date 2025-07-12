@@ -117,15 +117,15 @@ fn compile_css(css_files: &[FileInput], project_context: &ProjectContext, compil
             source_file: css_file.source_file(),
             contents: post_processed.value.as_bytes(),
         };
-        if compilation_mode.is_production() {
-            crate::common::path_utils::write_output_file_smart(output_path.as_path(), post_processed.value.as_bytes());
-        } else if is_modified  {
-            write_or_symlink_output.execute();
-        } else {
-            write_or_symlink_output.write_symlink().unwrap_or_else(|_| {
-                write_or_symlink_output.execute();
-            });
-        }
+        crate::common::path_utils::write_output_file_smart(output_path.as_path(), post_processed.value.as_bytes());
+        // if compilation_mode.is_production() {
+        // } else if is_modified  {
+        //     write_or_symlink_output.execute();
+        // } else {
+        //     write_or_symlink_output.write_symlink().unwrap_or_else(|_| {
+        //         write_or_symlink_output.execute();
+        //     });
+        // }
     }
 }
 
