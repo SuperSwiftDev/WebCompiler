@@ -23,6 +23,7 @@ struct SourceSpec {
     input: String,
     #[serde(default)]
     strip_prefix: Option<String>,
+    /// will override the default global template.
     #[serde(default)]
     template: Option<PathBuf>,
 }
@@ -30,7 +31,9 @@ struct SourceSpec {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ManifestSpec {
     project: ProjectSpec,
+    #[serde(default)]
     targets: Vec<TargetSpec>,
+    #[serde(default)]
     sources: Vec<SourceSpec>,
 }
 

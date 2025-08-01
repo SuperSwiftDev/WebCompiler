@@ -39,7 +39,7 @@ impl SiteTreeLayout {
             }
         }
         // - -
-        for input in input_rules {
+        'outer: for input in input_rules {
             let public_path = input.resolved_public_path(project_context);
             let components = public_path
                 .components()
@@ -49,8 +49,14 @@ impl SiteTreeLayout {
             let mut breadcrumbs = Vec::<SystemBreadcrumbComponent>::new();
             let mut leading = PathBuf::new();
             for component in components.clone() {
-                let input = mapping.get(&leading).unwrap();
-                let title = title_map.get(input.source_file()).unwrap().to_string();
+                let input = match mapping.get(&leading) {
+                    Some(x) => x,
+                    None => continue 'outer
+                };
+                let title = match title_map.get(input.source_file()) {
+                    Some(x) => x.to_string(),
+                    None => continue 'outer
+                };
                 breadcrumbs.push(SystemBreadcrumbComponent {
                     source: input.to_owned(),
                     title,
@@ -104,7 +110,7 @@ fn get_title(file_input: &FileInput) -> Option<String> {
         output.output
     };
     let target_tag = TagBuf::from("define-title");
-    let title = source_tree.find_first(&target_tag).expect("expecting define-title tag");
+    let title = source_tree.find_first(&target_tag)?;
     let title = title.as_element().unwrap();
     let body_text = title.text_contents().join("");
     let body_text = body_text.trim().to_string();
