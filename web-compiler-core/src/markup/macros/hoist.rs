@@ -3,7 +3,8 @@ use macro_types::environment::MacroIO;
 
 use macro_types::scope::{BinderValue, MarkupBinderValue};
 use web_compiler_types::CompilerRuntime;
-use xml_ast::Node;
+use xml_ast::{Fragment, Node};
+use super::super::pre::PreProcessor;
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct HoistMacroTag;
@@ -13,18 +14,22 @@ impl MacroTag for HoistMacroTag {
     fn tag_name(&self) -> &'static str { "hoist" }
     fn apply(
         &self,
-        attributes: xml_ast::AttributeMap,
+        _: xml_ast::AttributeMap,
         children: xml_ast::Fragment,
         scope: &mut macro_types::environment::ProcessScope,
         runtime: &Self::Runtime,
     ) -> MacroIO<xml_ast::Node> {
-        let _ = attributes;
-        let _ = children;
-        let _ = scope;
-        let _ = runtime;
-        MacroIO::wrap(Node::empty()).and_modify_context(|ctx| {
-            ctx.hoisted.push(BinderValue::Markup(MarkupBinderValue(Node::Fragment(children))));
-        })
+        let mut child_scope = scope.to_owned();
+        // let mut embedded_scope = scope.to_owned();
+        let pre_processor = PreProcessor::new(runtime.clone());
+        pre_processor
+            .process_sequence(children.to_vec(), &mut child_scope)
+            .and_then(|children| {
+                MacroIO::wrap(Node::empty()).and_modify_context(|ctx| {
+                    let children = Fragment::from_nodes(children);
+                    ctx.hoisted.push(BinderValue::Markup(MarkupBinderValue(Node::Fragment(children))));
+                })
+            })
     }
 }
 

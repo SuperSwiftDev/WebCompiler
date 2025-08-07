@@ -169,7 +169,9 @@ impl Fragment {
 impl Node {
     fn render_impl(&self, environment: &FormatEnvironment) -> String {
         match self {
-            Self::Text(text) => text.to_owned(),
+            Self::Text(text) => {
+                html_escape::encode_double_quoted_attribute(text.as_str()).to_string()
+            },
             Self::Element(element) => element.render_impl(environment),
             Self::Fragment(fragment) => fragment.render_impl(environment),
         }
@@ -240,6 +242,8 @@ fn format_attributes(
     let attributes = attributes
         .into_iter()
         .map(|(key, value)| {
+            let key = html_escape::encode_double_quoted_attribute(key.as_str()).to_string();
+            let value = html_escape::encode_double_quoted_attribute(value.as_str()).to_string();
             // println!("{key:?}: {value:?}");
             // if value.is_empty() {
             //     return format!("{}", key);
