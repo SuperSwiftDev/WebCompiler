@@ -101,3 +101,40 @@ Web Compiler improves on these by offering:
 * Custom macro expansion passes
 * Compile-time template injection
 * Resolved link correctness by design
+
+---
+
+## Updates
+
+### 2025-8-8
+
+#### Heading Baselines
+
+Added a new baseline feature that will automatically decrement headings relative to some given baseline.
+
+For example:
+
+- `./index.html`:
+  ```html
+  <h1>Timeline</h1>
+  <h2>2019</h2>
+  <include
+      src="./milestone.html"
+      baseline="h3">
+  </include>
+  ```
+
+- `./milestone.html`:
+  ```html
+  <h1 class="title">Milestone</h1>
+  <p>At the end of 2019 I raked up an impressive 1,323 contributions on GitHub that placed me among the platform’s most active developers.</p>
+  ```
+
+- > Compiling `./index.html` will result in the following,
+  >
+  > ```html
+  > <h1>Timeline</h1>
+  > <h2>2019</h2>
+  > <h3 class="title">Milestone</h3>
+  > <p>At the end of 2019 I raked up an impressive 1,323 contributions on GitHub that placed me among the platform’s most active developers.</p>
+  > ```
