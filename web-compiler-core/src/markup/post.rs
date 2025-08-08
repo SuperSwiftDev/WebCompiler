@@ -1,4 +1,4 @@
-use macro_types::{environment::{SourceHostRef, SourcePathResolver}, tag_rewrite_rule::TagRewriteRuleSet};
+use macro_types::{lexical_env::{SourceHostRef, SourcePathResolver}, tag_rewrite_rule::TagRewriteRuleSet};
 use xml_ast::{traversal::ElementVisitor, Element, Node};
 
 use crate::macro_types::project::ResolvedDependencies;

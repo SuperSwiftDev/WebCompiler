@@ -1,7 +1,7 @@
 #![allow(unused)]
 use io_types::Effectful;
 // use lightningcss::error;
-use macro_types::environment::{AccumulatedEffects, Featureset, ProcessScope, MacroIO, SourceHostRef, SourceHost};
+use macro_types::lexical_env::{AccumulatedEffects, Featureset, ProcessScope, MacroIO, SourceHostRef, SourceHost};
 use macro_types::macro_tag::MacroTagSet;
 use macro_types::project::FileInput;
 use xml_ast::{transform::{EffectfulMarkupTransformer, ProcessMode}, AttributeMap, Element, Fragment, Node, TagBuf};

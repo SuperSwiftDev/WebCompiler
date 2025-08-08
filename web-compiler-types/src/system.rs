@@ -2,7 +2,7 @@
 
 use std::path::{Path, PathBuf};
 
-use macro_types::environment::{Featureset, SourceHostRef, SourceHost};
+use macro_types::lexical_env::{Featureset, SourceHostRef, SourceHost};
 use macro_types::macro_tag::MacroTagSet;
 use macro_types::project::{FileInput, ProjectContext};
 use macro_types::tag_rewrite_rule::TagRewriteRuleSet;

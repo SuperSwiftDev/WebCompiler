@@ -1,5 +1,5 @@
 use macro_types::macro_tag::MacroTag;
-use macro_types::environment::MacroIO;
+use macro_types::lexical_env::MacroIO;
 use macro_types::path_expr::PathExpression;
 use xml_ast::Node;
 
@@ -15,7 +15,7 @@ impl MacroTag for BindMacroTag {
         &self,
         attributes: xml_ast::AttributeMap,
         _: xml_ast::Fragment,
-        scope: &mut macro_types::environment::ProcessScope,
+        scope: &mut macro_types::lexical_env::ProcessScope,
         runtime: &Self::Runtime,
     ) -> MacroIO<xml_ast::Node> {
         let target = attributes

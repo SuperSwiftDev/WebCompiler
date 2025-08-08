@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use macro_types::environment::{MacroIO, ProcessScope, SourceHostRef};
+use macro_types::lexical_env::{MacroIO, ProcessScope, SourceHostRef};
 use macro_types::tag_rewrite_rule::TagRewriteRule;
 use xml_ast::{Element, Node, TagBuf};
 

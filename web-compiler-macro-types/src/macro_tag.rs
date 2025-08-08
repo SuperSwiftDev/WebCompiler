@@ -2,7 +2,7 @@ use std::{collections::{BTreeMap, BTreeSet}, rc::Rc};
 
 use xml_ast::{transform::ProcessMode, AttributeMap, Element, Fragment, Node};
 
-use crate::environment::{Featureset, ProcessScope, MacroIO, SourceHost};
+use crate::lexical_env::{Featureset, ProcessScope, MacroIO, SourceHost};
 
 /// Applied during the top-down traversal phase.
 pub trait MacroTag {

@@ -1,5 +1,5 @@
 use macro_types::macro_tag::MacroTag;
-use macro_types::environment::{MacroIO, SourceHost};
+use macro_types::lexical_env::{MacroIO, SourceHost};
 use macro_types::project::FileInput;
 use macro_types::scope::{BinderValue, JsonBinderValue};
 use xml_ast::Node;
@@ -18,7 +18,7 @@ impl MacroTag for IncludeMacroTag {
         &self,
         attributes: xml_ast::AttributeMap,
         children: xml_ast::Fragment,
-        scope: &mut macro_types::environment::ProcessScope,
+        scope: &mut macro_types::lexical_env::ProcessScope,
         runtime: &Self::Runtime,
     ) -> MacroIO<xml_ast::Node> {
         let mut child_scope = scope.to_owned();

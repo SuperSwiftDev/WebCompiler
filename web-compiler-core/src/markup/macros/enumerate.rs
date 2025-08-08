@@ -1,5 +1,5 @@
 use macro_types::{macro_tag::MacroTag, scope::JsonBinderValue};
-use macro_types::environment::MacroIO;
+use macro_types::lexical_env::MacroIO;
 use macro_types::scope::BinderValue;
 use xml_ast::{Fragment, Node};
 
@@ -19,14 +19,14 @@ impl MacroTag for EnumerateMacroTag {
         &self,
         attributes: xml_ast::AttributeMap,
         children: xml_ast::Fragment,
-        scope: &mut macro_types::environment::ProcessScope,
+        scope: &mut macro_types::lexical_env::ProcessScope,
         runtime: &Self::Runtime,
     ) -> MacroIO<xml_ast::Node> {
         fn resolved_node_binder_pipeline(
             ident: impl AsRef<str>,
             binder: Node,
             body: &xml_ast::Fragment,
-            scope: &mut macro_types::environment::ProcessScope,
+            scope: &mut macro_types::lexical_env::ProcessScope,
             runtime: &CompilerRuntime,
         ) -> MacroIO<xml_ast::Node> {
             let fragment = binder
@@ -55,7 +55,7 @@ impl MacroTag for EnumerateMacroTag {
             ident: impl AsRef<str>,
             binder: &JsonBinderValue,
             body: xml_ast::Fragment,
-            scope: &mut macro_types::environment::ProcessScope,
+            scope: &mut macro_types::lexical_env::ProcessScope,
             runtime: &CompilerRuntime,
         ) -> MacroIO<xml_ast::Node> {
             let binder = match binder {

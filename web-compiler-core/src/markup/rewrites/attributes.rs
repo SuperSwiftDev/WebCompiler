@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use xml_ast::{AttributeMap, AttributeValueBuf, Node, TagBuf};
 use macro_types::scope::BinderValue;
-use macro_types::environment::{AccumulatedEffects, SourceHostRef, SourcePathResolver};
+use macro_types::lexical_env::{AccumulatedEffects, SourceHostRef, SourcePathResolver};
 use macro_types::helpers::srcset::SrcsetCandidate;
 use macro_types::project::{DependencyRelation, FileDependency, ResolvedDependencies, ResolvedDependencyRelation};
 use web_compiler_types::CompilerRuntime;
@@ -243,7 +243,7 @@ fn resolve_dependency_relation(
 
 pub fn resolve_attribute_path_expressions(
     attributes: &mut AttributeMap,
-    scope: &mut macro_types::environment::ProcessScope,
+    scope: &mut macro_types::lexical_env::ProcessScope,
     runtime: &CompilerRuntime,
 ) {
     attributes.map_mut(|_, value| {
@@ -261,7 +261,7 @@ pub fn resolve_attribute_path_expressions(
 
 pub fn resolve_string_expression(
     value: &mut String,
-    scope: &mut macro_types::environment::ProcessScope,
+    scope: &mut macro_types::lexical_env::ProcessScope,
     runtime: &CompilerRuntime,
 ) {
     let rewrite = ResolvedPathExpression::parse(
@@ -288,7 +288,7 @@ pub enum AttributeCommand {
 impl AttributeCommand {
     pub fn from_attributes(
         attributes: &mut AttributeMap,
-        scope: &mut macro_types::environment::ProcessScope,
+        scope: &mut macro_types::lexical_env::ProcessScope,
         runtime: &CompilerRuntime,
     ) -> Option<Self> {
         if let Some(if_control) = Self::parse_if_control_attribute(attributes, scope, runtime) {
@@ -301,7 +301,7 @@ impl AttributeCommand {
     }
     pub fn parse_if_control_attribute(
         attributes: &mut AttributeMap,
-        scope: &mut macro_types::environment::ProcessScope,
+        scope: &mut macro_types::lexical_env::ProcessScope,
         runtime: &CompilerRuntime,
     ) -> Option<Self> {
         let value = attributes.get("if")?;
@@ -315,7 +315,7 @@ impl AttributeCommand {
     }
     pub fn parse_unless_control_attribute(
         attributes: &mut AttributeMap,
-        scope: &mut macro_types::environment::ProcessScope,
+        scope: &mut macro_types::lexical_env::ProcessScope,
         runtime: &CompilerRuntime,
     ) -> Option<Self> {
         let value = attributes.get("unless")?;
@@ -354,7 +354,7 @@ struct ResolvedPathExpression<'a> {
 impl<'a> ResolvedPathExpression<'a> {
     pub fn parse(
         raw: &'a str,
-        scope: &'a mut macro_types::environment::ProcessScope,
+        scope: &'a mut macro_types::lexical_env::ProcessScope,
         runtime: &'a CompilerRuntime,
     ) -> Option<Self> {
         raw .trim()

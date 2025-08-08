@@ -4,7 +4,7 @@ pub mod macros;
 pub mod rewrites;
 
 use std::path::PathBuf;
-use macro_types::environment::{AccumulatedEffects, HostInfo, MacroIO, ProcessScope, SourceHostRef, SourcePathResolver};
+use macro_types::lexical_env::{AccumulatedEffects, HostInfo, MacroIO, ProcessScope, SourceHostRef, SourcePathResolver};
 use macro_types::breadcrumbs::SiteTreeLayout;
 use macro_types::macro_tag::MacroTagSet;
 use macro_types::project::{FileInput, ProjectContext, ResolvedDependencies};

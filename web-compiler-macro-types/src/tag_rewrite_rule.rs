@@ -3,7 +3,7 @@ use std::rc::Rc;
 
 use xml_ast::{Element, Node};
 
-use crate::environment::{Featureset, MacroIO, ProcessScope, SourceHostRef};
+use crate::lexical_env::{Featureset, MacroIO, ProcessScope, SourceHostRef};
 
 /// Applied during the bottom-up traversal phase.
 pub trait TagRewriteRule {

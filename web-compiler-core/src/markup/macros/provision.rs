@@ -1,5 +1,5 @@
 use macro_types::macro_tag::MacroTag;
-use macro_types::environment::MacroIO;
+use macro_types::lexical_env::MacroIO;
 
 use web_compiler_types::CompilerRuntime;
 
@@ -13,7 +13,7 @@ impl MacroTag for ProvisionMacroTag {
         &self,
         attributes: xml_ast::AttributeMap,
         children: xml_ast::Fragment,
-        scope: &mut macro_types::environment::ProcessScope,
+        scope: &mut macro_types::lexical_env::ProcessScope,
         runtime: &Self::Runtime,
     ) -> MacroIO<xml_ast::Node> {
         let _ = attributes;

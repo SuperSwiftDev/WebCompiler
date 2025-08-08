@@ -10,7 +10,7 @@ use lightningcss::visit_types;
 use lightningcss::visitor::{Visit, VisitTypes, Visitor};
 
 use macro_types::project::DependencyRelation;
-use macro_types::environment::{AccumulatedEffects, MacroIO, SourceHostRef};
+use macro_types::lexical_env::{AccumulatedEffects, MacroIO, SourceHostRef};
 use io_types::Effectful;
 
 // ————————————————————————————————————————————————————————————————————————————

@@ -1,5 +1,5 @@
 use macro_types::macro_tag::MacroTag;
-use macro_types::environment::MacroIO;
+use macro_types::lexical_env::MacroIO;
 use macro_types::scope::{BinderValue, JsonBinderValue};
 use xml_ast::{Fragment, Node};
 
@@ -15,7 +15,7 @@ impl MacroTag for InjectMacroTag {
         &self,
         attributes: xml_ast::AttributeMap,
         _: xml_ast::Fragment,
-        scope: &mut macro_types::environment::ProcessScope,
+        scope: &mut macro_types::lexical_env::ProcessScope,
         runtime: &Self::Runtime,
     ) -> MacroIO<xml_ast::Node> {
         if attributes.contains_key("hoisted") {
@@ -29,6 +29,14 @@ impl MacroTag for InjectMacroTag {
                 .map(|x| Node::Element(x))
                 .collect::<Vec<_>>();
             return MacroIO::wrap(Node::Fragment(Fragment::from_nodes(nodes)))
+        }
+        if attributes.contains_key("self") {
+            let result = scope.binding_scope
+                .lookup("self")
+                .and_then(|x| x.as_node())
+                .map(ToOwned::to_owned)
+                .unwrap_or_else(|| Node::empty());
+            return MacroIO::wrap(result)
         }
         let injection = attributes
             .get("path")

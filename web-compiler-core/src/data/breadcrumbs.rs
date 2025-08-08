@@ -1,5 +1,5 @@
 use macro_types::breadcrumbs::{BreadcrumbComponentValue, BreadcrumbPathListValue, SystemBreadcrumbComponent, SystemBreadcrumbPath};
-use macro_types::environment::MacroIO;
+use macro_types::lexical_env::MacroIO;
 use macro_types::project::ProjectContext;
 
 

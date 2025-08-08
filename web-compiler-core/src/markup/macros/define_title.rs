@@ -1,6 +1,6 @@
 use macro_types::scope::MarkupBinderValue;
 use macro_types::{macro_tag::MacroTag, scope::BinderValue};
-use macro_types::environment::MacroIO;
+use macro_types::lexical_env::MacroIO;
 
 use web_compiler_types::CompilerRuntime;
 use xml_ast::{Element, Node};
@@ -15,7 +15,7 @@ impl MacroTag for DefineTitleMacroTag {
         &self,
         attributes: xml_ast::AttributeMap,
         children: xml_ast::Fragment,
-        scope: &mut macro_types::environment::ProcessScope,
+        scope: &mut macro_types::lexical_env::ProcessScope,
         _: &Self::Runtime,
     ) -> MacroIO<xml_ast::Node> {
         let title_element = Element::new("title").with_children(children);

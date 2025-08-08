@@ -1,5 +1,5 @@
 use macro_types::macro_tag::MacroTag;
-use macro_types::environment::MacroIO;
+use macro_types::lexical_env::MacroIO;
 
 use macro_types::scope::BinderValue;
 use web_compiler_types::CompilerRuntime;
@@ -15,7 +15,7 @@ impl MacroTag for DefineMacroTag {
         &self,
         attributes: xml_ast::AttributeMap,
         _: xml_ast::Fragment,
-        scope: &mut macro_types::environment::ProcessScope,
+        scope: &mut macro_types::lexical_env::ProcessScope,
         _: &Self::Runtime,
     ) -> MacroIO<xml_ast::Node> {
         let key_target = attributes.get("key");

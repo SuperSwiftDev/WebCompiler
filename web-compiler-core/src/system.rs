@@ -1,7 +1,7 @@
 //! Types for defining the overall compiler.
 use std::collections::HashSet;
 
-use macro_types::environment::{Featureset, SourceHostRef};
+use macro_types::lexical_env::{Featureset, SourceHostRef};
 use macro_types::breadcrumbs::SiteTreeLayout;
 use macro_types::project::{FileInput, ProjectContext, ResolvedDependencies};
 use web_compiler_types::{CompilationMode, CompilerFeatureset, CompilerPipeline, CompilerRuntime};
