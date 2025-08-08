@@ -130,11 +130,13 @@ For example:
   <p>At the end of 2019 I raked up an impressive 1,323 contributions on GitHub that placed me among the platform’s most active developers.</p>
   ```
 
-- > Compiling `./index.html` will result in the following,
-  >
-  > ```html
-  > <h1>Timeline</h1>
-  > <h2>2019</h2>
-  > <h3 class="title">Milestone</h3>
-  > <p>At the end of 2019 I raked up an impressive 1,323 contributions on GitHub that placed me among the platform’s most active developers.</p>
-  > ```
+Compiling `./index.html` will result in the following,
+
+```html
+<h1>Timeline</h1>
+<h2>2019</h2>
+<h3 class="title">Milestone</h3>
+<p>At the end of 2019 I raked up an impressive 1,323 contributions on GitHub that placed me among the platform’s most active developers.</p>
+```
+
+This should allow for simpler modular hierarchical headings, all heading levels are file relative, where files can include other files and decrement all headings relative to the embedded structure.
