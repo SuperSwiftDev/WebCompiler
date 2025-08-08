@@ -90,6 +90,7 @@ pub fn execute_compiler_pipeline(compiler_pipeline: CompilerPipeline) {
 }
 
 fn compile_css(css_files: &[FileInput], project_context: &ProjectContext, compilation_mode: CompilationMode, remaining: &mut Vec<FileInput>) {
+    let _ = compilation_mode;
     // let mut resolved_dependencies = ResolvedDependencies::default();
     for css_file in css_files {
         let css_source = css_file.load_source_file();
@@ -127,6 +128,8 @@ fn compile_css(css_files: &[FileInput], project_context: &ProjectContext, compil
             source_file: css_file.source_file(),
             contents: post_processed.value.as_bytes(),
         };
+        let _ = is_modified; // TODO: MAYBE USE THIS
+        let _ = write_or_symlink_output; // TODO: DISGARD THIS?
         crate::common::path_utils::write_output_file_smart(output_path.as_path(), post_processed.value.as_bytes());
         // if compilation_mode.is_production() {
         // } else if is_modified  {

@@ -81,6 +81,12 @@ impl BinderValue {
             _ => None,
         }
     }
+    pub fn as_object(&self) -> Option<&ObjectMap> {
+        match self {
+            Self::Json(JsonBinderValue::Object(x)) => Some(&x),
+            _ => None,
+        }
+    }
     pub fn try_cast_to_string(&self) -> Option<&str> {
         match self {
             Self::Markup(MarkupBinderValue(Node::Text(text))) => Some(text),
@@ -106,8 +112,10 @@ pub enum JsonBinderValue {
     Number(String),
     String(String),
     Array(Vec<JsonBinderValue>),
-    Object(BTreeMap<String, JsonBinderValue>),
+    Object(ObjectMap),
 }
+
+pub type ObjectMap = BTreeMap<String, JsonBinderValue>;
 
 impl JsonBinderValue {
     pub fn json_string(text: impl Into<String>) -> Self {
@@ -148,6 +156,36 @@ impl JsonBinderValue {
                     .collect::<BTreeMap<_, _>>();
                 Self::Object(xs)
             }
+        }
+    }
+    pub fn as_bool(&self) -> Option<&bool> {
+        match self {
+            Self::Bool(x) => Some(x),
+            _ => None,
+        }
+    }
+    pub fn as_number(&self) -> Option<&String> {
+        match self {
+            Self::Number(x) => Some(x),
+            _ => None,
+        }
+    }
+    pub fn as_string(&self) -> Option<&String> {
+        match self {
+            Self::String(x) => Some(x),
+            _ => None,
+        }
+    }
+    pub fn as_array(&self) -> Option<&Vec<JsonBinderValue>> {
+        match self {
+            Self::Array(x) => Some(x),
+            _ => None,
+        }
+    }
+    pub fn as_object(&self) -> Option<&ObjectMap> {
+        match self {
+            Self::Object(x) => Some(x),
+            _ => None,
         }
     }
 }
