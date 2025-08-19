@@ -9,6 +9,7 @@ mod route;
 mod define;
 mod hoist;
 mod define_title;
+mod rewrite;
 
 use std::rc::Rc;
 
@@ -23,6 +24,7 @@ pub use route::*;
 pub use define::*;
 pub use hoist::*;
 pub use define_title::*;
+pub use rewrite::*;
 
 use macro_types::macro_tag::{MacroTag, MacroTagSet};
 
@@ -41,6 +43,7 @@ pub fn standard_macro_tags() -> Vec<Rc<dyn MacroTag<Runtime = CompilerRuntime>>>
         Rc::new(DefineMacroTag),
         Rc::new(HoistMacroTag),
         Rc::new(DefineTitleMacroTag),
+        // Rc::new(RewriteRuleMacroTag),
     ]
 }
 

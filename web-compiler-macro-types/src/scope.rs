@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 use serde::Serialize;
-use xml_ast::{Fragment, Node};
+use xml_ast::{Element, Fragment, Node};
 
 
 // ————————————————————————————————————————————————————————————————————————————
@@ -216,4 +216,36 @@ impl BindingScope {
 }
 
 
+// ————————————————————————————————————————————————————————————————————————————
+// CONVERSIONS
+// ————————————————————————————————————————————————————————————————————————————
 
+impl From<Node> for BinderValue {
+    fn from(value: Node) -> Self {
+        BinderValue::Markup(MarkupBinderValue(value))
+    }
+}
+
+impl From<Element> for BinderValue {
+    fn from(value: Element) -> Self {
+        BinderValue::Markup(MarkupBinderValue(Node::Element(value)))
+    }
+}
+
+impl<'a> From<&'a Node> for BinderValue {
+    fn from(value: &'a Node) -> Self {
+        BinderValue::Markup(MarkupBinderValue(value.to_owned()))
+    }
+}
+
+impl<'a> From<&'a Element> for BinderValue {
+    fn from(value: &'a Element) -> Self {
+        BinderValue::Markup(MarkupBinderValue(Node::Element(value.to_owned())))
+    }
+}
+
+// impl<'a> From<&'a Node> for BinderValue {
+//     fn from(value: &'a Node) -> Self {
+//         BinderValue::Markup(MarkupBinderValue(value.clone()))
+//     }
+// }

@@ -2,6 +2,7 @@ pub mod pre;
 pub mod post;
 pub mod macros;
 pub mod rewrites;
+pub mod rewrite_dsl;
 
 use std::path::PathBuf;
 use macro_types::lexical_env::{AccumulatedEffects, HostInfo, MacroIO, ProcessScope, SourceHostRef, SourcePathResolver};
