@@ -8,12 +8,6 @@ members = [
     "web-compiler-css",
     "web-compiler-core",
     "web-compiler",
-    "xml-ai-client",
-    "xml-ai-core",
-    "xml-ai",
-    "web-client-bot",
-    "web-crawler",
-    "xml-ai-engine",
 ]
 
 resolver = "3"  # Use resolver version 3 (recommended for edition 2021/2024)
